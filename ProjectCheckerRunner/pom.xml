@@ -13,6 +13,23 @@
 
   <name>Sonar MSBuild Plugin :: ProjectChecker</name>
 
+    <profiles>
+            <profile>
+                <activation>
+                  <activeByDefault>true</activeByDefault>
+                  <property>
+                    <name>!vsBin</name>
+                  </property>
+                </activation>
+        
+                <properties>
+                    <vsBin>C:/Program Files (x86)/MSBuild/14.0/Bin/msbuild.exe</vsBin>            
+                </properties>
+
+
+            </profile>	  	
+    </profiles>	
+  
   <build>
     <plugins>
       <plugin>
@@ -27,7 +44,7 @@
               <goal>exec</goal>
             </goals>
             <configuration>
-              <executable>C:/Program Files (x86)/MSBuild/14.0/Bin/msbuild.exe</executable>
+              <executable>${vsBin}</executable>
               <workingDirectory>.</workingDirectory>
               <arguments>
                 <argument>/property:Configuration=Release</argument>
@@ -42,7 +59,7 @@
               <goal>exec</goal>
             </goals>
             <configuration>
-              <executable>c:/tekla/BuildTools/Nuget/Nuget.exe</executable>
+              <executable>${project.basedir}/nuget/nuget.exe</executable>
               <workingDirectory>.</workingDirectory>
               <arguments>
                 <argument>restore</argument>
@@ -56,7 +73,7 @@
               <goal>exec</goal>
             </goals>
             <configuration>
-              <executable>C:/Program Files (x86)/MSBuild/14.0/Bin/msbuild.exe</executable>
+              <executable>${vsBin}</executable>
               <workingDirectory>.</workingDirectory>
               <arguments>
                 <argument>/property:Configuration=Release</argument>
