@@ -1,0 +1,5 @@
+/target/
+ProjectCheckerRunner/MSBuild
+*.unittest.report.xml
+.sonar
+*.coverage.xml

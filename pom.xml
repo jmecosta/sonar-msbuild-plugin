@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.codehaus.sonar-plugins</groupId>
+    <artifactId>parent</artifactId>
+    <version>19</version>
+  </parent>
+  
+  <groupId>tekla.sonar-plugins.msbuild</groupId>
+  <artifactId>sonar-msbuild-squid</artifactId>
+  <packaging>pom</packaging>
+  <version>0.9-SNAPSHOT</version>
+
+  <name>SonarQube MSBuild Plugin</name>
+  <inceptionYear>2015</inceptionYear>
+  <organization>
+    <name>Jorge Costa and SonarSource</name>
+    <url>http://www.sonarsource.com</url>
+  </organization>
+
+  <scm>
+    <connection>scm:git:git@github.com:jmecosta/sonar-fsharp-plugin.git</connection>
+    <developerConnection>scm:git:git@github.com:jmecosta/sonar-fsharp-plugin.git</developerConnection>
+    <url>https://github.com/jmecosta/sonar-fsharp-plugin</url>
+    <tag>0.9-SNAPSHOT</tag>
+  </scm>
+  <issueManagement>
+    <system>GitHub</system>
+    <url>https://github.com/jmecosta/sonar-fsharp-plugin/issues</url>
+  </issueManagement>
+
+  <modules>
+    <module>ProjectCheckerRunner</module>
+    <module>sonar-msbuild-plugin</module>    
+  </modules>
+
+  <properties>
+    <sonar.version>4.5.1</sonar.version>
+    <license.owner>Jorge Costa</license.owner>
+    <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.codehaus.sonar.sslr-squid-bridge</groupId>
+        <artifactId>sslr-squid-bridge</artifactId>
+        <version>2.5</version>
+      </dependency>        
+      <dependency>
+        <groupId>org.codehaus.sonar</groupId>
+        <artifactId>sonar-plugin-api</artifactId>
+        <version>${sonar.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.sonar</groupId>
+        <artifactId>sonar-deprecated</artifactId>
+        <version>${sonar.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.sonar</groupId>
+        <artifactId>sonar-duplications</artifactId>
+        <version>${sonar.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.codehaus.sonar</groupId>
+        <artifactId>sonar-check-api</artifactId>
+        <version>${sonar.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>10.0.1</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>1.5.6</version>
+      </dependency>
+      <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>jcl-over-slf4j</artifactId>
+        <version>1.5.6</version>
+      </dependency>
+      <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>0.9.15</version>
+      </dependency>
+
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.7</version>
+      </dependency>
+      <dependency>
+        <groupId>org.easytesting</groupId>
+        <artifactId>fest-assert</artifactId>
+        <version>1.4</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-all</artifactId>
+        <version>1.8.5</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+</project>

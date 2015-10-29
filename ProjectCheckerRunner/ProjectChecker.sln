@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ProjectCheckerTask", "ProjectCheckerTask\ProjectCheckerTask.fsproj", "{F02E14B7-F4CD-430F-9078-B3F06A67C404}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ProjectCheckerTask.Test", "ProjectCheckerTask.Test\ProjectCheckerTask.Test.fsproj", "{60ED46EC-DD42-4713-BA7C-4E225564F42A}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ProjectCheckerRunner", "ProjectCheckerRunner\ProjectCheckerRunner.fsproj", "{08505DFA-D451-4191-BC11-3F9DC53972DB}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MSbuildPackageDiagramCreator", "MSbuildPackageDiagramCreator\MSbuildPackageDiagramCreator.fsproj", "{29432B5E-7D75-482B-9840-BCBCC9F0E659}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MsbuildAutomationHelper", "MsbuildAutomationHelper\MsbuildAutomationHelper.fsproj", "{49F98A4D-DA45-4E7A-8E37-70D62A036283}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MsbuildAutomationHelper.Test", "MsbuildAutomationHelper.Test\MsbuildAutomationHelper.Test.fsproj", "{F8CC7EF2-7B2D-4882-91FD-42928814EDD6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F02E14B7-F4CD-430F-9078-B3F06A67C404}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F02E14B7-F4CD-430F-9078-B3F06A67C404}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F02E14B7-F4CD-430F-9078-B3F06A67C404}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F02E14B7-F4CD-430F-9078-B3F06A67C404}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60ED46EC-DD42-4713-BA7C-4E225564F42A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60ED46EC-DD42-4713-BA7C-4E225564F42A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60ED46EC-DD42-4713-BA7C-4E225564F42A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60ED46EC-DD42-4713-BA7C-4E225564F42A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08505DFA-D451-4191-BC11-3F9DC53972DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08505DFA-D451-4191-BC11-3F9DC53972DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08505DFA-D451-4191-BC11-3F9DC53972DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08505DFA-D451-4191-BC11-3F9DC53972DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29432B5E-7D75-482B-9840-BCBCC9F0E659}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29432B5E-7D75-482B-9840-BCBCC9F0E659}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29432B5E-7D75-482B-9840-BCBCC9F0E659}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29432B5E-7D75-482B-9840-BCBCC9F0E659}.Release|Any CPU.Build.0 = Release|Any CPU
+		{49F98A4D-DA45-4E7A-8E37-70D62A036283}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49F98A4D-DA45-4E7A-8E37-70D62A036283}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49F98A4D-DA45-4E7A-8E37-70D62A036283}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49F98A4D-DA45-4E7A-8E37-70D62A036283}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8CC7EF2-7B2D-4882-91FD-42928814EDD6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8CC7EF2-7B2D-4882-91FD-42928814EDD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8CC7EF2-7B2D-4882-91FD-42928814EDD6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8CC7EF2-7B2D-4882-91FD-42928814EDD6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

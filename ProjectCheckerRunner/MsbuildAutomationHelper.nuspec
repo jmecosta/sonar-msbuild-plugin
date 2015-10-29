@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package>
+    <metadata>
+        <id>MsbuildAutomationHelper</id>
+        <version>1.0</version>
+        <authors>Jorge Costa</authors>
+        <owners>Trimble Solutions Corporation</owners>
+        <licenseUrl>http://TODO</licenseUrl>
+        <projectUrl>http://TODO</projectUrl>
+        <iconUrl>http://TODO</iconUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>MSBuild Automation Helper to Support SonarQube MSBuild Plugin</description>
+        <releaseNotes>Initial Package.</releaseNotes>
+        <copyright>Copyright © 1992-2015 Trimble Solutions Corporation and its licensors. All rights reserved.</copyright>
+        <tags></tags>
+        <references>
+            <reference file="MsbuildAutomationHelper.dll" />
+         </references>
+    </metadata>
+    <files>
+        <file src="MsbuildAutomationHelper\bin\Release\MsbuildAutomationHelper.dll" target="lib" />
+    </files>
+</package>

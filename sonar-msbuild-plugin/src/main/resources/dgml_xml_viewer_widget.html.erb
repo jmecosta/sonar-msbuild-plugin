@@ -1,0 +1,23 @@
+<%
+  # other mechanisms kick in when you set this global var.
+  # the value will be displayed in the blue title bar across the top of the widget
+  baseurl=Property.value('sonar.core.serverBaseURL', nil, 'http://localhost:9000')
+  projectkey=@project.key
+%>
+
+<%
+  measuredata = measure('DIAGRAM-DGML')
+ %>
+
+<div class="dashbox">
+    <h3><span title="<%= widget_properties['widgetTitle'] -%>"></span></h3>
+    <p>
+    <h3>Current dgml size:</h3>
+    <p>
+    <span>
+        <%= format_measure('DIAGRAM-DGML-SIZE', :suffix => ' bytes', :url => baseurl + "/api/resources?resource=" + projectkey + "&metrics=DIAGRAM-DGML") %>
+    </span>
+    </p>
+</div>
+
+</head>
