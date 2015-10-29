@@ -5,9 +5,9 @@
         <version>1.0</version>
         <authors>Jorge Costa</authors>
         <owners>Trimble Solutions Corporation</owners>
-        <licenseUrl>http://TODO</licenseUrl>
-        <projectUrl>http://TODO</projectUrl>
-        <iconUrl>http://TODO</iconUrl>
+        <licenseUrl>https://github.com/TeklaCorp/sonar-msbuild-plugin/blob/master/LICENSE</licenseUrl>
+        <projectUrl>https://github.com/TeklaCorp/sonar-msbuild-plugin</projectUrl>
+        <iconUrl>https://github.com/TeklaCorp/sonar-msbuild-plugin/blob/master/Icon.ico</iconUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>MSBuild Automation Helper to Support SonarQube MSBuild Plugin</description>
         <releaseNotes>Initial Package.</releaseNotes>
