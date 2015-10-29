@@ -21,7 +21,7 @@ import org.sonar.api.PropertyType;
 import org.sonar.api.SonarPlugin;
 import org.sonar.api.config.PropertyDefinition;
 import org.sonar.api.resources.Qualifiers;
-import org.sonar.plugins.build.dgmlcreator.MSBuildDiagramCreatorSensor;
+import org.sonar.plugins.msbuild.dgmlcreator.MSBuildDiagramCreatorSensor;
 import org.sonar.plugins.msbuild.checks.MSBuildSonarWayProfile;
 import org.sonar.plugins.msbuild.projectchecker.MSBuildProjectCheckerRulesDefinition;
 import org.sonar.plugins.msbuild.projectchecker.MSBuildProjectCheckerExtensionSensor;

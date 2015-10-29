@@ -25,7 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import org.sonar.api.config.Settings;
-import org.sonar.plugins.build.dgmlcreator.MSBuildDiagramCreatorSensor;
+import org.sonar.plugins.msbuild.dgmlcreator.MSBuildDiagramCreatorSensor;
 import org.sonar.plugins.msbuild.projectchecker.MSBuildProjectCheckerExtensionSensor;
 
 @InstantiationStrategy(InstantiationStrategy.PER_BATCH)
