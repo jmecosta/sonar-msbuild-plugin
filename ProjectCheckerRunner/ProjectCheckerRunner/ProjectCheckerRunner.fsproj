@@ -69,10 +69,8 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="FSharp.Data">
-      <HintPath>..\References\FSharp.Data.dll</HintPath>
-    </Reference>
-    <Reference Include="FSharp.Data.DesignTime">
-      <HintPath>..\References\FSharp.Data.DesignTime.dll</HintPath>
+      <HintPath>..\packages\FSharp.Data.2.2.5\lib\net40\FSharp.Data.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Build" />
     <Reference Include="Microsoft.Build.Framework" />
