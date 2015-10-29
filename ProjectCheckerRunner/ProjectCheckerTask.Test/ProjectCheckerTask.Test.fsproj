@@ -61,6 +61,9 @@
     <Compile Include="TestReadabilityIssuesChecks.fs" />
     <Compile Include="TestAll.fs" />
     <Content Include="packages.config" />
+    <None Include="project.csproj">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Foq">

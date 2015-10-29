@@ -12,7 +12,7 @@ open System.Reflection
 type TestAllCheck() = 
     let assemblyRunningPath = Directory.GetParent(Assembly.GetExecutingAssembly().Location).ToString()
     [<Test>]
-    member test.``Should Not Run for Know supported Project Type`` () = 
+    member test.``Is able to run a complete analysis`` () = 
         let checker = new ProjectCheckerTask()
         checker.ExecuteAnalysisOnProjectFile(assemblyRunningPath +  "/project.csproj", "")
         let issues = checker.GetAllIssues()
