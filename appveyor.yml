@@ -39,5 +39,5 @@ cache:
 artifacts:
   - path: 'sonar-msbuild-plugin/target/*.jar'
     name: sonar-msbuild-plugin
-  - path: 'ProjectCheckerRunner/nuget/*.nupkg'
+  - path: '*.nupkg'
     name: sonar-msbuild-plugin-nugets
