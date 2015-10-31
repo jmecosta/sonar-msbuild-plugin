@@ -17,10 +17,11 @@ type SQAnalyser() =
     let resourcesLocker = new System.Object()
 
     member this.AddExternalAnalyser(path : string) =  
-        if File.Exists(path) then
-            externalDlls <- externalDlls @ [path]
-        else
-            raise(new Exception("External Path Does Not Exist: " + path))
+        if path <> "" then
+            if File.Exists(path) then
+                externalDlls <- externalDlls @ [path]
+            else
+                raise(new Exception("External Path Does Not Exist: " + path))
 
     member this.AddIgnoreIncludeFolder(path : string) =  
         if File.Exists(path) then
