@@ -132,18 +132,20 @@ let main argv =
                 let ingoreFolders = (options.Settings |> Seq.find (fun c -> c.Key.Equals("sonar.msbuild.include.folder.ignores"))).Value
                 let rules = options.Settings |> Seq.find (fun c -> c.Key.Equals("sonar.msbuild.projectchecker.customrules"))
 
-                for dllPath in rules.Value.Split(';') do                    
-                    printf "    External Analysers: %A" dllPath
-                    if Path.IsPathRooted(dllPath) then
-                        analyser.AddExternalAnalyser(dllPath)
-                    else 
-                        analyser.AddExternalAnalyser(Path.Combine(basePath, dllPath))
-                
-                for folder in ingoreFolders.Split(';') do                    
-                    if Path.IsPathRooted(folder) then
-                        analyser.AddIgnoreIncludeFolder(folder)
-                    else 
-                        analyser.AddIgnoreIncludeFolder(Path.Combine(basePath, folder))
+                if rules.Value <> "" then
+                    for dllPath in rules.Value.Split(';') do                    
+                        printf "    External Analysers: %A\n" dllPath
+                        if Path.IsPathRooted(dllPath) then
+                            analyser.AddExternalAnalyser(dllPath)
+                        else 
+                            analyser.AddExternalAnalyser(Path.Combine(basePath, dllPath))
+
+                if ingoreFolders <> "" then
+                    for folder in ingoreFolders.Split(';') do                    
+                        if Path.IsPathRooted(folder) then
+                            analyser.AddIgnoreIncludeFolder(folder)
+                        else 
+                            analyser.AddIgnoreIncludeFolder(Path.Combine(basePath, folder))
 
                                 
                 options.Files |> PSeq.iter  (fun c -> if File.Exists(c) then analyser.RunAnalyses(c))
