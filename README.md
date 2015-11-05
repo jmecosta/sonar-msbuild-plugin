@@ -1,6 +1,8 @@
 # sonar-msbuild-plugin
 
-The plugin provides analysis for msbuild projects.  
+The plugin provides analysis for msbuild projects. 
+
+[![Build status](https://ci.appveyor.com/api/projects/status/b6skmhmfyqsemcoh/branch/master?svg=true)](https://ci.appveyor.com/project/TeklaCorp/sonar-msbuild-plugin/branch/master)
 
 # Description / Features
 
