@@ -25,7 +25,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DocumentationFile>bin\Debug\MSbuildPackageDiagramCreator.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
-    <StartArguments>/m d:\prod\structures\MSBuild\RunFast.msbuild /t BuildTSAndDotAppsMain</StartArguments>
+    <StartArguments>/s D:\prod\tools\TeklaMSBuildTasks\MSBuildTasks.sln</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
