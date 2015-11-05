@@ -10,6 +10,11 @@ open System.Text.RegularExpressions
 open System.Reflection
 open RuleBase
 
+let toMap dictionary = 
+    (dictionary :> seq<_>)
+    |> Seq.map (|KeyValue|)
+    |> Map.ofSeq
+
 let LoadChecksFromPath(path : string) =
     let mutable checks : RuleBase List = List.Empty
     let assembly = Assembly.LoadFrom(path)
@@ -50,7 +55,7 @@ let CreateSolutionData(solution : string) =
                     element.Guid <- project.Guid
                     element.Path <- project.Path
                 else
-                    solutionData.Projects <- solutionData.Projects.Add(project.Guid, project)
+                    solutionData.Projects.Add(project.Guid, project)
             else
                 try
                     if line.Contains("=") && not(line.Contains("postProject")) then
@@ -64,14 +69,14 @@ let CreateSolutionData(solution : string) =
                                 if projectRef.Name = "" then
                                     raise(ProjectTypes.IncorrectNameForProject("sadsa"))
 
-                                solutionData.Projects <- solutionData.Projects.Add(projectRef.Guid, projectRef)
+                                solutionData.Projects.Add(projectRef.Guid, projectRef)
                                 projectRef
                             else
                                 solutionData.Projects.[new Guid(id)]
                         
                         projectRef.Visible <- true
                         project.Visible <- true
-                        project.BuildDepencies <- project.BuildDepencies.Add(projectRef.Guid, projectRef)                    
+                        project.BuildDepencies.Add(projectRef.Guid, projectRef)                    
                 with
                 | ex -> ()
 
@@ -127,7 +132,7 @@ let PopulateHeaderMatrix(additionalIncludeDirectories : byref<Set<string>>, incl
                     if not(additionalIncludeDirectories.Contains(path)) then
                         additionalIncludeDirectories <- additionalIncludeDirectories.Add(path)                                                                                                 
                     if not(project.DependentDirectories.Contains(path)) then
-                        project.DependentDirectories <- project.DependentDirectories.Add(path)                                                                                                 
+                        project.DependentDirectories.Add(path) |> ignore
         | _ -> ()
 
 
@@ -179,7 +184,7 @@ let PopulateProjectReferences(item : ProjectItem, project : ProjectTypes.Project
                     printfn "Invalid project reference to external project %s -> %s" project.Path path
                     projectRef
                                                                                                      
-            project.ProjectReferences <- project.ProjectReferences.Add(projectRef.Guid, projectRef)
+            project.ProjectReferences.Add(projectRef.Guid, projectRef)
             project.Visible <- true
         | _ -> ()                
 
@@ -296,7 +301,7 @@ let FindDependencyInSolution(directory : string, solution : ProjectTypes.Solutio
         directory.Contains(directoryOfProject) 
 
     let mutable projectToAdd : ProjectTypes.Project = null
-    Map.toArray solution.Projects |> Array.tryFind (fun c -> (CheckArrayElement(c)))
+    Map.toArray (toMap solution.Projects) |> Array.tryFind (fun c -> (CheckArrayElement(c)))
     
 
 let GenerateHeaderDependencies(solutionList : ProjectTypes.Solution List,
@@ -319,7 +324,7 @@ let GenerateHeaderDependencies(solutionList : ProjectTypes.Solution List,
                             match projectOption with
                             | Some (guid, projectFound) ->  
                                     if not(guid.Equals(project.Value.Guid)) && plotHeaderDependencyInsideProject then
-                                        project.Value.HeaderReferences <- project.Value.HeaderReferences.Add(guid, projectFound)
+                                        project.Value.HeaderReferences.Add(guid, projectFound)
                                         project.Value.Visible <- true
                             | _  -> 
                                     try
@@ -329,7 +334,7 @@ let GenerateHeaderDependencies(solutionList : ProjectTypes.Solution List,
                                                 match projectOption with
                                                 | Some (guid, projectFound) ->  
                                                         if not(guid.Equals(project.Value.Guid)) then
-                                                            project.Value.HeaderReferences <- project.Value.HeaderReferences.Add(guid, projectFound)
+                                                            project.Value.HeaderReferences.Add(guid, projectFound)
                                                             project.Value.Visible <- true
                                                             raise(ProjectTypes.FoundElementException("found"))
                                                 | _  -> ()
@@ -361,7 +366,7 @@ let GenerateHeaderDependenciesForTargets(targets : ProjectTypes.MsbuildTarget Li
                                 match projectOption with
                                 | Some (guid, projectFound) ->  
                                         if not(guid.Equals(project.Value.Guid)) && plotHeaderDependencyInsideProject then
-                                            project.Value.HeaderReferences <- project.Value.HeaderReferences.Add(guid, projectFound)
+                                            project.Value.HeaderReferences.Add(guid, projectFound)
                                             project.Value.Visible <- true
                                 | _  -> 
                                     try
@@ -372,7 +377,7 @@ let GenerateHeaderDependenciesForTargets(targets : ProjectTypes.MsbuildTarget Li
                                                     match projectOption with
                                                     | Some (guid, projectFound) ->  
                                                             if not(guid.Equals(project.Value.Guid)) then
-                                                                project.Value.HeaderReferences <- project.Value.HeaderReferences.Add(guid, projectFound)
+                                                                project.Value.HeaderReferences.Add(guid, projectFound)
                                                                 project.Value.Visible <- true
                                                                 raise(ProjectTypes.FoundElementException("found"))
                                                     | _  -> ()

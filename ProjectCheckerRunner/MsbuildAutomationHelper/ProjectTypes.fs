@@ -23,11 +23,11 @@ type Project() =
     member val Name : string =  "" with get, set
     member val Guid : Guid = Guid.Empty with get, set
     member val Path : string = "" with get, set
-    member val BuildDepencies : Map<Guid, Project> = Map.empty with get, set
-    member val ProjectReferences : Map<Guid, Project> = Map.empty with get, set
-    member val HeaderReferences : Map<Guid, Project> = Map.empty with get, set
-    member val DependentDirectories : Set<string> = Set.empty with get, set
-    member val AssemblyReferences : Map<string, AssemblyRef> = Map.empty with get, set
+    member val BuildDepencies :  System.Collections.Generic.Dictionary<Guid, Project>  = new System.Collections.Generic.Dictionary<Guid, Project>() with get, set
+    member val ProjectReferences :  System.Collections.Generic.Dictionary<Guid, Project>  = new System.Collections.Generic.Dictionary<Guid, Project>() with get, set
+    member val HeaderReferences : System.Collections.Generic.Dictionary<Guid, Project>  = new System.Collections.Generic.Dictionary<Guid, Project>() with get, set
+    member val DependentDirectories : System.Collections.Generic.HashSet<string> = new System.Collections.Generic.HashSet<string>() with get, set
+    member val AssemblyReferences : System.Collections.Generic.Dictionary<Guid, AssemblyRef>  = new System.Collections.Generic.Dictionary<Guid, AssemblyRef>() with get, set
     member val NugetReferences : Set<string> = Set.empty with get, set
     member val Visible : bool = false with get, set
 
@@ -44,7 +44,7 @@ type Solution() =
     member val Name : string =  "" with get, set
     member val Path : string =  "" with get, set
     member val Guid : Guid =  Guid.Empty with get, set
-    member val Projects : Map<Guid, Project>  = Map.empty with get, set
+    member val Projects : System.Collections.Generic.Dictionary<Guid, Project>  = new System.Collections.Generic.Dictionary<Guid, Project>() with get, set
 
 type MsbuildTarget() = 
     member val Name : string =  "" with get, set
