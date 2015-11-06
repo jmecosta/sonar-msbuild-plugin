@@ -401,5 +401,19 @@ let CreateTargetTree(path : string, target : string,
     targets
 
 
+let GetProjectFilePathForFile(projectPath : string, fileName : string) =
 
-                   
+    let msbuildproject =
+        let projects = ProjectCollection.GlobalProjectCollection.GetLoadedProjects(projectPath)
+    
+        if projects.Count <> 0 then
+            let data = projects.GetEnumerator();
+            data.MoveNext() |> ignore
+            data.Current
+        else
+             new Microsoft.Build.Evaluation.Project(projectPath)
+
+    let element = msbuildproject.Items |> Seq.tryFind (fun c -> fileName.ToLower().EndsWith(c.EvaluatedInclude.ToLower()))
+    match element with
+    | Some(c) -> c.EvaluatedInclude
+    | _ -> ""
