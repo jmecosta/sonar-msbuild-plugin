@@ -324,8 +324,9 @@ let GenerateHeaderDependencies(solutionList : ProjectTypes.Solution List,
                             match projectOption with
                             | Some (guid, projectFound) ->  
                                     if not(guid.Equals(project.Value.Guid)) && plotHeaderDependencyInsideProject then
-                                        project.Value.HeaderReferences.Add(guid, projectFound)
-                                        project.Value.Visible <- true
+                                        if not(project.Value.HeaderReferences.ContainsKey(guid)) then
+                                            project.Value.HeaderReferences.Add(guid, projectFound)
+                                            project.Value.Visible <- true
                             | _  -> 
                                     try
                                         for solution2 in solutionList do
