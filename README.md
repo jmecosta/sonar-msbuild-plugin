@@ -2,7 +2,7 @@
 
 The plugin provides analysis for msbuild projects. 
 
-[![Build status](https://ci.appveyor.com/api/projects/status/b6skmhmfyqsemcoh/branch/master?svg=true)](https://ci.appveyor.com/project/TeklaCorp/sonar-msbuild-plugin/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/qwqbn68q2ejhd4xg/branch/master?svg=true)](https://ci.appveyor.com/project/jorgecosta/sonar-msbuild-plugin-7e5ti/branch/master)
 
 # Description / Features
 
