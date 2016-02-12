@@ -54,12 +54,14 @@ type MsbuildTarget() =
 type Rule() = 
     member val Key : string = "" with get, set
     member val Description : string = "" with get, set
+    member val Level : string = "warning" with get, set
     
 type SonarIssue() =
     member val Rule : string = "" with get, set
     member val Line : int = 0 with get, set
     member val Component : string = "" with get, set
     member val Message : string = "" with get, set
+    member val Level : string = "warning" with get, set
 
 type SonarResoureMetrics(path : string) = 
     member val ResourcePath : string = path with get
@@ -139,6 +141,7 @@ type ProjType = XmlProvider<"""<?xml version="1.0" encoding="utf-8"?>
   <Reference Include="Library1">
     <HintPath>$(BINDir)\Application.Library.dll</HintPath>
     <Private>False</Private>
+    <Private>True</Private>
   </Reference>
   </ItemGroup>
   <ItemGroup>

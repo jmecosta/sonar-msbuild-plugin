@@ -12,13 +12,15 @@ type RuleBase() =
                 issueList <- issueList @ [new SonarIssue(Component = file,
                                                     Line = line, 
                                                     Message= issue,
-                                                    Rule = rule.Key)]
+                                                    Rule = rule.Key,
+                                                    Level = rule.Level)]
         with
         | ex ->
             issueList <- issueList @ [new SonarIssue(Component = file,
                                                 Line = line, 
                                                 Message= issue,
-                                                Rule = rule.Key)]
+                                                Rule = rule.Key,
+                                                Level = rule.Level)]
 
   member this.GetIssues() = 
     issueList

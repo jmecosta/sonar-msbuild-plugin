@@ -100,6 +100,7 @@ let ShowHelp () =
 let main argv = 
     printfn "%A" argv
     let arguments = parseArgs(argv)
+    let mutable failed = false
     
     if arguments.ContainsKey("h") then
         ShowHelp()
@@ -168,11 +169,21 @@ let main argv =
             cppfiles |> Seq.iter (fun c -> metrics.RunAnalyses(c))
             fsfiles  |> Seq.iter (fun c -> metrics.RunAnalyses(c))
 
-            metrics.WriteXmlToDisk(argv.[1])
+            failed <-
+                if argv.Length > 1 then
+                    metrics.WriteXmlToDisk(argv.[1])
+                    false
+                else
+                    metrics.ReportWarnings()
+
+            
         with
         | ex -> printf "    Failed: %A" ex
     else
         ShowHelp()
 
-    0
+    if failed then
+        1
+    else
+        0
 
