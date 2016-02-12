@@ -27,7 +27,7 @@
     <DocumentationFile>bin\Debug\ProjectCheckerRunner.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
     <StartAction>Project</StartAction>
-    <StartArguments>/i:D:\prod\structures\Core\Model\.sonar\msbuild-analysis-input.xml /o:D:\prod\structures\Core\Model\.sonar\msbuild-analysis-output.xml</StartArguments>
+    <StartArguments>/d:d:\prod\extensions-ext\usa</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>

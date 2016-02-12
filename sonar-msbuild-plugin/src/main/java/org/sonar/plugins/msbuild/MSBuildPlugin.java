@@ -14,7 +14,6 @@
  */
 package org.sonar.plugins.msbuild;
 
-import org.sonar.plugins.msbuild.checks.MSBuildRulesRepository;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
 import org.sonar.api.PropertyType;
@@ -22,7 +21,6 @@ import org.sonar.api.SonarPlugin;
 import org.sonar.api.config.PropertyDefinition;
 import org.sonar.api.resources.Qualifiers;
 import org.sonar.plugins.msbuild.dgmlcreator.MSBuildDiagramCreatorSensor;
-import org.sonar.plugins.msbuild.checks.MSBuildSonarWayProfile;
 import org.sonar.plugins.msbuild.projectchecker.MSBuildProjectCheckerRulesDefinition;
 import org.sonar.plugins.msbuild.projectchecker.MSBuildProjectCheckerExtensionSensor;
 import org.sonar.plugins.msbuild.widgets.DmglXmlWidget;
@@ -192,8 +190,6 @@ public final class MSBuildPlugin extends SonarPlugin {
       
       MSBuildLanguage.class,
 
-      MSBuildSonarWayProfile.class,
-
       MSBuildCodeColorizerFormat.class,
       MSBuildCpdMapping.class,
 
@@ -203,8 +199,6 @@ public final class MSBuildPlugin extends SonarPlugin {
       MSBuildProjectCheckerExtensionSensor.class,
       MSBuildDiagramCreatorSensor.class,
       MSBuildRunnerExtractor.class,
-      MSBuildRulesRepository.class,
-      MSBuildSensor.class,
       
       // metrics
       MSBuildMetrics.class,

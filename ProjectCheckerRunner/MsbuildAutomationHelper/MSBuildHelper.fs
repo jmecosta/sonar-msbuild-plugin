@@ -28,13 +28,14 @@ let LoadChecksFromPath(path : string) =
 
     checks
 
+let mutable projectData = List.Empty
 let CreateSolutionData(solution : string) =
     let solutionData = new ProjectTypes.Solution()
     solutionData.Name <- "SLN:" + Path.GetFileNameWithoutExtension(solution)
 
     let content = File.ReadAllLines(solution)
 
-    let mutable projectData = List.Empty
+    projectData <- List.Empty
     let handleProject(data : string List, project : ProjectTypes.Project) = 
         
         for line in data do
@@ -95,11 +96,11 @@ let CreateSolutionData(solution : string) =
 
     solutionData
 
+let mutable headers : string [] = Array.empty
 let GetIncludePathsForFile(path : string) =
     let content = File.ReadAllLines(path)
 
-    let mutable headers : string [] = Array.empty
-        
+    headers <- Array.empty
     let CheckLine(line : string) = 
         if line.StartsWith("#include") then
             for elem in Regex.Matches(line, "\"([^\"]*)\"") do
@@ -324,8 +325,9 @@ let GenerateHeaderDependencies(solutionList : ProjectTypes.Solution List,
                             match projectOption with
                             | Some (guid, projectFound) ->  
                                     if not(guid.Equals(project.Value.Guid)) && plotHeaderDependencyInsideProject then
-                                        project.Value.HeaderReferences.Add(guid, projectFound)
-                                        project.Value.Visible <- true
+                                        if not(project.Value.HeaderReferences.ContainsKey(guid)) then
+                                            project.Value.HeaderReferences.Add(guid, projectFound)
+                                            project.Value.Visible <- true
                             | _  -> 
                                     try
                                         for solution2 in solutionList do

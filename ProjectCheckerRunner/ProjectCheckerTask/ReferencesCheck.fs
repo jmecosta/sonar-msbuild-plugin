@@ -18,6 +18,12 @@ type ReferencesCheck() =
         new Rule(Key = "AlwaysUserProjectReferencesInSameSolution",
                  Description = "For projects in the same solution, always use project references instead of DLL references. (Create them from the Projects tab of the Add References window of Visual Studio) In the project files, they will look different.")
 
+    let MultiplePrivateSet =
+        new Rule(Key = "MultiplePrivateSet",
+                 Description = "Several Private Flags have been found, this is likely a nuget update issue. Please ensure only one private flag is used",
+                 Level = "error")
+
+
     member val AssemblyLookpupLines : string array = [||] with get, set
 
     override this.SupportsProject(path) =
@@ -56,9 +62,11 @@ type ReferencesCheck() =
                 with
                 | ex -> ()
 
-
                 ValidateAlwaysUserProjectReferencesInSameSolution(path, reference.Include, solution, lines)
 
+                // make sure only one private flag is set
+                if reference.Privates.Length > 1 then
+                     this.SaveIssue(path, this.GetLineFromString(ref, lines) + 1, ref + " contains multiple private flags.", MultiplePrivateSet)
 
             try
                 itemgroup.References |> Seq.iter (fun x -> validateReferences(x))

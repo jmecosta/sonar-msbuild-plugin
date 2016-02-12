@@ -23,6 +23,6 @@ public class MSBuildPluginTest {
   @Test
   public void testGetExtensions() throws Exception {
     MSBuildPlugin plugin = new MSBuildPlugin();
-    assertEquals(29, plugin.getExtensions().size());
+    assertEquals(26, plugin.getExtensions().size());
   }
 }
