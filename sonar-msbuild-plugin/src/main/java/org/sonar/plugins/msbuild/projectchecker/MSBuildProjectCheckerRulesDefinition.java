@@ -36,7 +36,9 @@ public class MSBuildProjectCheckerRulesDefinition implements RulesDefinition {
     repository.createRule("FullyQualifiedReferenceRule").setName("Fully Qualify the References, Always specify the Version, Culture, PublicKeyToken attributes to make sure they will resolve to the right version of the DLL.").setSeverity(Severity.MAJOR);
     repository.createRule("AlwaysUserProjectReferencesInSameSolution").setName("Project References Instead of dll reference for projects in same solution").setSeverity(Severity.MAJOR);
 
-    repository.createRule("EmptyTagsRule").setName("No Empty Tags in Project File").setSeverity(Severity.MAJOR);       
+    repository.createRule("EmptyTagsRule").setName("No Empty Tags in Project File").setSeverity(Severity.MAJOR);    
+    repository.createRule("MultiplePrivateSet").setName("Private Flag set more than once of reference").setSeverity(Severity.MAJOR);
+    
     repository.createRule("CannotReadProjectError").setName("Cannot Read Project File Error").setSeverity(Severity.MAJOR);    
                
     // msbuild automation rules
