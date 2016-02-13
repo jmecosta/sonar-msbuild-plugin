@@ -55,15 +55,6 @@ public final class MSBuildPlugin extends SonarPlugin {
         .onQualifiers(Qualifiers.PROJECT)
         .build(), 
       
-      PropertyDefinition.builder(MSBuildProjectCheckerExtensionSensor.PROJECT_CHECKER_ENABLED)
-        .defaultValue("True")
-        .name("Project checker enabled")
-        .description("Disables project check so it does not check TS specific stuff")
-        .category("Msbuild")
-        .subCategory("ProjectChecker")
-        .onQualifiers(Qualifiers.PROJECT)
-        .type(PropertyType.BOOLEAN)
-        .build(),
       PropertyDefinition.builder(MSBuildProjectCheckerExtensionSensor.PROJECT_CHECKER_PATH)
         .name("Project checker path")
         .description("Use external path for checker")

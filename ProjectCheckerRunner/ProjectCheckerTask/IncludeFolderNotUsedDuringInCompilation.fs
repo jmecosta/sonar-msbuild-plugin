@@ -47,7 +47,9 @@ type IncludeFolderNotUsedDuringInCompilation() =
                         let foundInIgnore = includefolderstoignore |> Seq.tryFind ( fun d -> c.ToLower().Contains(d.ToLower()))
                         match foundInIgnore with
                         | Some(d) -> ()
-                        | _ -> this.SaveIssue(path, 1, "Additional Include Path " + c + " can be removed, its not used", IncludeFolderNotUsedDuringInCompilation)
+                        | _ -> 
+                            if not(c.ToLower().Contains("packages")) then
+                                this.SaveIssue(path, 1, "Additional Include Path " + c + " can be removed, its not used", IncludeFolderNotUsedDuringInCompilation)
                     else
                         ())
 

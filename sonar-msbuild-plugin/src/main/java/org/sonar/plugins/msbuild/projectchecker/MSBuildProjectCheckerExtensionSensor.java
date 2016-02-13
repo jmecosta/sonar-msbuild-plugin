@@ -75,7 +75,6 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
   private final ProjectReactor reactor;
 
   public static final String EXTERNAL_CUSTOM_RULES = "sonar.msbuild.projectchecker.customrules";
-  public static final String PROJECT_CHECKER_ENABLED = "sonar.msbuild.prjectChecker.enabled"; 
   public static final String PROJECT_CHECKER_PATH = "sonar.msbuild.prjectChecker.Path";
      
   public MSBuildProjectCheckerExtensionSensor(Settings settings, MSBuildRunnerExtractor extractor, FileSystem fs, FileLinesContextFactory fileLinesContextFactory,
@@ -97,11 +96,7 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
   }
 
   @Override
-  public void analyse(Project project, SensorContext context) {
-    if (!settings.getBoolean(PROJECT_CHECKER_ENABLED)) {
-      return;
-    }
-    
+  public void analyse(Project project, SensorContext context) {    
     analyze();
     importResults(project, context);
   }
