@@ -11,7 +11,7 @@
   <groupId>tekla.sonar-plugins.msbuild</groupId>
   <artifactId>sonar-msbuild-squid</artifactId>
   <packaging>pom</packaging>
-  <version>0.9-SNAPSHOT</version>
+  <version>1.0</version>
 
   <name>SonarQube MSBuild Plugin</name>
   <inceptionYear>2015</inceptionYear>

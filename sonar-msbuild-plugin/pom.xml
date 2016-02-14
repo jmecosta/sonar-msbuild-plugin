@@ -10,7 +10,7 @@
 
   <groupId>tekla.sonar-plugins.msbuild</groupId>
   <artifactId>sonar-msbuild-plugin</artifactId>
-  <version>0.9-SNAPSHOT</version>
+  <version>1.0</version>
   <packaging>sonar-plugin</packaging>
   
   <name>Sonar MSBuild Plugin :: Squid</name>
