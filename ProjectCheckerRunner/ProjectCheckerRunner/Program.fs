@@ -146,7 +146,7 @@ let main argv =
                         if Path.IsPathRooted(folder) then
                             analyser.AddIgnoreIncludeFolder(folder)
                         else 
-                            analyser.AddIgnoreIncludeFolder(Path.Combine(basePath, folder))
+                            analyser.AddIgnoreIncludeFolder(Path.GetFullPath(Path.Combine(basePath, folder)))
 
                                 
                 options.Files |> PSeq.iter  (fun c -> if File.Exists(c) then analyser.RunAnalyses(c))

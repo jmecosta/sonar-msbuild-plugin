@@ -48,7 +48,7 @@ public final class MSBuildPlugin extends SonarPlugin {
             
       PropertyDefinition.builder(MSBuildPlugin.IGNORE_LIST_INCLUDES_FOLDERS)
         .name("Include folders to ignore")
-        .description("Include paths in list will not be used during diagram creation")
+        .description("Include paths in list will not be used during diagram creation or rule checking")
         .type(PropertyType.STRING)
         .multiValues(true)
         .category("Msbuild")

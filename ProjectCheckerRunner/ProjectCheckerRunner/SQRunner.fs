@@ -24,10 +24,10 @@ type SQAnalyser() =
                 raise(new Exception("External Path Does Not Exist: " + path))
 
     member this.AddIgnoreIncludeFolder(path : string) =  
-        if File.Exists(path) then
+        if Directory.Exists(path) then
             ingoreFolder <- ingoreFolder @ [path]
         else
-            raise(new Exception("Include folder to ingore does Not Exist: " + path))
+            raise(new Exception("Include folder to ignore does Not Exist: " + path))
 
             
     member this.RunAnalysesForOutput(path : string) =  
