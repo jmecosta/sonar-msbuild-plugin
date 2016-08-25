@@ -24,7 +24,7 @@ type ReadabilityIssuesChecks() =
                  
         for attribute in project.XElement.Elements() do
             if not(attribute.HasElements) && not(attribute.HasAttributes) then
-                this.SaveIssue(path, 1, "Empty Node in Xml Can Be Removed", EmptyTagsRule)
+                this.SaveIssue(path, 1, "Make sure all empty xml nodes in this file are removed.", EmptyTagsRule)
                 
                                 
     override this.GetRules =
