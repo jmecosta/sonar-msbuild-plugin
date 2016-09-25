@@ -3,9 +3,9 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>tekla.sonar-plugins.msbuild</groupId>
-    <artifactId>sonar-msbuild-squid</artifactId>
-    <version>1.0</version>
+    <groupId>jmecsoftware.sonarqube.msbuild</groupId>
+    <artifactId>sonarqube-msbuild</artifactId>
+    <version>1.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>ProjectChecker</artifactId>

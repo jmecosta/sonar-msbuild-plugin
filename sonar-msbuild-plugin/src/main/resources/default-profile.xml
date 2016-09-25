@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="ASCII"?>
-<profile>
-  <name>Default MSBuild Profile</name>
-  <language>MSBuild</language>
-  <rules>
-  </rules>
-</profile>
