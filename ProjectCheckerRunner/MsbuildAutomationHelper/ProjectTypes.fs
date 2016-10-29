@@ -177,4 +177,34 @@ type ProjType = XmlProvider<"""<?xml version="1.0" encoding="utf-8"?>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+      <!-- All Chain No RPC Apps and External Apps -->
+    <Target Name="dada" DependsOnTargets="dss">
+        <ItemGroup>
+            <a Include="$(S53)">
+              <Properties>GtestRunnerTaskEnabled=$(BuildAllUnitTestsEnabled);NunitRunnerTaskEnabled=$(BuildAllUnitTestsEnabled);StyleCopEnabled=false;TeklaCopEnabled=FALSE</Properties>
+            </a>        
+            <a Include="$(S55)">
+              <Properties>Platform=x64;TSPlatform=x64;GtestRunnerTaskEnabled=$(BuildAllUnitTestsEnabled);NunitRunnerTaskEnabled=$(BuildAllUnitTestsEnabled);StyleCopEnabled=false;TeklaCopEnabled=FALSE</Properties>
+            </a>
+
+            <b Include="$(S56)">
+              <Properties>Platform=x64;TSPlatform=x64;GtestRunnerTaskEnabled=$(BuildAllUnitTestsEnabled);NunitRunnerTaskEnabled=$(BuildAllUnitTestsEnabled);StyleCopEnabled=false;TeklaCopEnabled=FALSE</Properties>
+            </b>
+        </ItemGroup>
+
+        <ItemGroup>
+            <a Include="$(SL1)">
+              <Properties>GtestRunnerTaskEnabled=$(BuildAllUnitTestsEnabled);NunitRunnerTaskEnabled=$(BuildAllUnitTestsEnabled);StyleCopEnabled=false;TeklaCopEnabled=FALSE</Properties>
+            </a>        
+            <a Include="$(SL2)">
+              <Properties>Platform=x64;TSPlatform=x64;GtestRunnerTaskEnabled=$(BuildAllUnitTestsEnabled);NunitRunnerTaskEnabled=$(BuildAllUnitTestsEnabled);StyleCopEnabled=false;TeklaCopEnabled=FALSE</Properties>
+            </a>
+
+            <b Include="$(SL3)">
+              <Properties>Platform=x64;TSPlatform=x64;GtestRunnerTaskEnabled=$(BuildAllUnitTestsEnabled);NunitRunnerTaskEnabled=$(BuildAllUnitTestsEnabled);StyleCopEnabled=false;TeklaCopEnabled=FALSE</Properties>
+            </b>
+        </ItemGroup>
+    </Target>
+    <Target Name="dada1" DependsOnTargets="dss">
+    </Target>
 </Project>""">

@@ -28,6 +28,7 @@ let LoadChecksFromPath(path : string) =
 
     checks
 
+let mutable BuildScripts = Map.empty
 let mutable projectData = List.Empty
 let CreateSolutionData(solution : string) =
     let solutionData = new ProjectTypes.Solution()
@@ -220,7 +221,7 @@ let CreateProjecNodesAndLinks(ignoredPackages : Set<string>, packagesBasePath : 
 
     let supportedExtensions = Set.ofList [".vcxproj"]
 
-    for project in solution.Projects do        
+    for project in solution.Projects do
         let extension = Path.GetExtension(project.Value.Path).ToLower()
 
         if supportedExtensions.Contains(extension) then            
@@ -267,20 +268,62 @@ let rec HandleTarget(projectInstance : ProjectTargetInstance,
                      nugetIgnorePackages : string,
                      checkRedundantIncludes : bool) =
     
+    let targetdata = msbuildproject.Targets.[target]
     let newTarget = new ProjectTypes.MsbuildTarget()
     newTarget.Name <- "MSB:" + target
 
     for children in projectInstance.Children do
         try
             let instance = children :?> ProjectTaskInstance
-            if instance.Name.Equals("MSBuild") then                
+            if instance.Name.Equals("MSBuild") then
                 let projects = instance.Parameters.["Projects"]
-                for project in projects.Split([|';'; '\n'; ' '; '\r'; '$'; '('; ')'|], StringSplitOptions.RemoveEmptyEntries) do                    
-                    let value = (msbuildproject.GetPropertyValue(project))
-                    if value.ToLower().EndsWith(".sln") then
-                        let solution = CreateSolutionData(value)
+                let fullElements = projects.Split([|';'; '\n'; ' '; '\r';|], StringSplitOptions.RemoveEmptyEntries)
+
+                let ProcessProjectForDeps(projectSolution:string) = 
+                    if projectSolution.ToLower().EndsWith(".sln") then
+                        let solution = CreateSolutionData(projectSolution)
                         CreateProjecNodesAndLinks((nugetIgnorePackages.Split([|';'; '\n'; ' '|], StringSplitOptions.RemoveEmptyEntries) |> Set.ofSeq), nugetPackageBase, solution, checkRedundantIncludes)
                         newTarget.Children <- newTarget.Children.Add(solution.Name, solution)
+
+                for project in projects.Split([|';'; '\n'; ' '; '\r'; '$'; '('; ')'; '@'; '%'|], StringSplitOptions.RemoveEmptyEntries) do
+                    let value = (msbuildproject.GetPropertyValue(project))
+
+                    if value <> "" then
+                        ProcessProjectForDeps(value)
+                    else
+                        // not able to evaluate data, search in file for property
+                        let xmlData = 
+                            if not(BuildScripts.ContainsKey(children.FullPath)) then
+                                BuildScripts <- BuildScripts.Add(children.FullPath, ProjectTypes.ProjType.Parse(File.ReadAllText(children.FullPath)))
+
+                            BuildScripts.[children.FullPath]
+
+                        let processXmlElements(topLevel:Xml.Linq.XElement) = 
+
+                            let ProcessAttribute(attrib:Xml.Linq.XAttribute) = 
+                                if attrib.Name.LocalName.ToLower().Equals("include") then
+                                    printf "%A" attrib.Value
+                                    for includeProj in attrib.Value.Split([|';'; '\n'; ' '; '\r'; '$'; '('; ')'|], StringSplitOptions.RemoveEmptyEntries) do
+                                        if Path.IsPathRooted(includeProj) then
+                                            ProcessProjectForDeps(includeProj)
+                                        else
+                                            let value = (msbuildproject.GetPropertyValue(includeProj))
+                                            if value <> "" then
+                                                ProcessProjectForDeps(value)
+
+                            let ProcessElement(elem:Xml.Linq.XElement) = 
+                                let localName = elem.Name.LocalName
+                                if localName.Equals(project) then
+                                    elem.Attributes() |> Seq.iter (fun x -> ProcessAttribute(x))
+
+                            topLevel.Elements() |> Seq.iter (fun elem -> ProcessElement(elem))
+
+                        let targetSubData = xmlData.Targets |> Seq.tryFind(fun x -> x.Name.Equals(target))
+                        match targetSubData with
+                        | Some target -> target.ItemGroups |> Seq.iter (fun x -> processXmlElements(x.XElement))
+                        | _ -> ()
+                        ()
+
         with
         | ex -> ()
         
@@ -368,8 +411,9 @@ let GenerateHeaderDependenciesForTargets(targets : ProjectTypes.MsbuildTarget Li
                                 match projectOption with
                                 | Some (guid, projectFound) ->  
                                         if not(guid.Equals(project.Value.Guid)) && plotHeaderDependencyInsideProject then
-                                            project.Value.HeaderReferences.Add(guid, projectFound)
-                                            project.Value.Visible <- true
+                                            if not(project.Value.HeaderReferences.ContainsKey(guid)) then
+                                                project.Value.HeaderReferences.Add(guid, projectFound)
+                                                project.Value.Visible <- true
                                 | _  -> 
                                     try
                                         for target2 in targets do
@@ -384,7 +428,7 @@ let GenerateHeaderDependenciesForTargets(targets : ProjectTypes.MsbuildTarget Li
                                                                 raise(ProjectTypes.FoundElementException("found"))
                                                     | _  -> ()
                                     with
-                                    | ex -> ()                                    
+                                    | ex -> ()
 
 
 let CreateTargetTree(path : string, target : string,
