@@ -69,7 +69,7 @@ let CreateSolutionData(solution : string) =
                                 let projectRef = new ProjectTypes.Project()
                                 projectRef.Guid <- new Guid(id)
                                 if projectRef.Name = "" then
-                                    raise(ProjectTypes.IncorrectNameForProject("sadsa"))
+                                    raise(ProjectTypes.IncorrectNameForProject("Post Project Incorrectly Named"))
 
                                 solutionData.Projects.Add(projectRef.Guid, projectRef)
                                 projectRef
@@ -229,6 +229,9 @@ let CreateProjecNodesAndLinks(ignoredPackages : Set<string>, packagesBasePath : 
                 if extension = ".vcxproj" then
                     let msbuildproject = new Microsoft.Build.Evaluation.Project(project.Value.Path)
                     let id = (msbuildproject.Properties |> Seq.find (fun c -> c.Name.Equals("RootNamespace"))).EvaluatedValue
+
+                    if not(Path.GetFileNameWithoutExtension(project.Value.Path).ToLower().Equals(id.ToLower())) then
+                        raise(ProjectTypes.IncorrectNameForProject("Post Project Incorrectly Named"))
 
                     project.Value.Name <- id
 
@@ -445,7 +448,6 @@ let CreateTargetTree(path : string, target : string,
     HandleTarget(data, msbuildproject, target, &targets, nugetPackageBase, nugetIgnorePackages, checkRedundantIncludes) |> ignore
     GenerateHeaderDependenciesForTargets(targets, plotHeaderDependency, ignoreIncludeFolders, plotHeaderDependencFilter, plotHeaderDependencyInsideProject)
     targets
-
 
 let GetProjectFilePathForFile(projectPath : string, fileName : string) =
 
