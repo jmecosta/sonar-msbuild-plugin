@@ -6,9 +6,16 @@ open System.IO
 open System.Text
 open Microsoft.Build.Execution
 open Microsoft.Build.Evaluation
-open System.Text.RegularExpressions
+
 open System.Reflection
 open RuleBase
+
+// Match starts with
+let (|Prefix|_|) (p:string) (s:string) =
+    if s.StartsWith(p) then
+        Some(s.Substring(p.Length))
+    else
+        None
 
 let toMap dictionary = 
     (dictionary :> seq<_>)
@@ -97,69 +104,73 @@ let CreateSolutionData(solution : string) =
 
     solutionData
 
-let mutable headers : string [] = Array.empty
-let GetIncludePathsForFile(path : string) =
-    let content = File.ReadAllLines(path)
-
-    headers <- Array.empty
-    let CheckLine(line : string) = 
-        if line.StartsWith("#include") then
-            for elem in Regex.Matches(line, "\"([^\"]*)\"") do
-                headers <- Array.append headers [|elem.ToString().Replace("\"", "")|]
-
-    content |> Array.Parallel.iter (fun c -> CheckLine(c))
-    headers
-
 let PopulateHeaderMatrix(additionalIncludeDirectories : byref<Set<string>>, includes : byref<Set<string>>, item : ProjectItem, project : ProjectTypes.Project, packagesBase : string) = 
-    if item.ItemType.Equals("ClCompile")  ||  item.ItemType.Equals("ClInclude")  then
+    if item.ItemType.Equals("ClCompile") then
+        let projectPath = Path.GetFullPath(Path.GetDirectoryName(project.Path)).ToString()
         let path = 
             if Path.IsPathRooted(item.EvaluatedInclude) then
                 item.EvaluatedInclude
             else
-                Path.Combine(Path.GetDirectoryName(project.Path), item.EvaluatedInclude)
+                Path.Combine(projectPath, item.EvaluatedInclude)
 
-        for fileinclude in GetIncludePathsForFile(path) do
-                if not(includes.Contains(fileinclude)) then
-                    includes <- includes.Add(fileinclude)                
+        let metadataelems = Seq.toList item.Metadata |> List.tryFind (fun c -> c.Name.Equals("AdditionalIncludeDirectories"))
 
-        let metadataelems = Seq.toList item.Metadata 
-
-        match metadataelems |> List.tryFind (fun c -> c.Name.Equals("AdditionalIncludeDirectories")) with
+        match metadataelems with
         | Some value -> 
-
             let includeDirs = value.EvaluatedValue.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
             for path in includeDirs do
                 let dir = path.ToLower().Replace("\\", "/")
                 if not(dir.Contains(packagesBase)) then
                     if not(additionalIncludeDirectories.Contains(path)) then
-                        additionalIncludeDirectories <- additionalIncludeDirectories.Add(path)                                                                                                 
+                        if Path.IsPathRooted(path) then
+                            additionalIncludeDirectories <- additionalIncludeDirectories.Add(path)
+                        else
+                            let basePath = Directory.GetParent(project.Path).ToString()
+                            additionalIncludeDirectories <- additionalIncludeDirectories.Add(Path.GetFullPath(Path.Combine(basePath, path)))
                     if not(project.DependentDirectories.Contains(path)) then
                         project.DependentDirectories.Add(path) |> ignore
         | _ -> ()
 
+        additionalIncludeDirectories <- additionalIncludeDirectories.Add(projectPath)
+        let dirs = (Seq.toList additionalIncludeDirectories)
+        for fileinclude in Helpers.GetIncludePathsForFile(path, dirs, project.Path) do
+                if not(includes.Contains(fileinclude)) then
+                    includes <- includes.Add(fileinclude)
+
+
+
 
 let PopulateHeaders(additionalIncludeDirectories : byref<Set<string>>, includes : byref<Set<string>>, item : ProjectItem, projectPath : string) = 
     if item.ItemType.Equals("ClCompile")  ||  item.ItemType.Equals("ClInclude")  then
+
+        let projectPathDir = Path.GetFullPath(Path.GetDirectoryName(projectPath)).ToString()
         let path = 
             if Path.IsPathRooted(item.EvaluatedInclude) then
                 item.EvaluatedInclude
             else
-                Path.Combine(Path.GetDirectoryName(projectPath), item.EvaluatedInclude)
+                Path.Combine(projectPathDir, item.EvaluatedInclude)
 
-        for fileinclude in GetIncludePathsForFile(path) do
-                if not(includes.Contains(fileinclude)) then
-                    includes <- includes.Add(fileinclude)                
-
-        let metadataelems = Seq.toList item.Metadata 
-
+        // get all additional includes
+        let metadataelems = Seq.toList item.Metadata
         match metadataelems |> List.tryFind (fun c -> c.Name.Equals("AdditionalIncludeDirectories")) with
-        | Some value -> 
-
+        | Some value ->
             let includeDirs = value.EvaluatedValue.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
             for path in includeDirs do
                 if not(additionalIncludeDirectories.Contains(path)) then
-                    additionalIncludeDirectories <- additionalIncludeDirectories.Add(path)                                                                                                 
+                    if Path.IsPathRooted(path) then
+                        additionalIncludeDirectories <- additionalIncludeDirectories.Add(path)
+                    else
+                        let basePath = Directory.GetParent(projectPath).ToString()
+                        additionalIncludeDirectories <- additionalIncludeDirectories.Add(Path.GetFullPath(Path.Combine(basePath, path)))
         | _ -> ()
+
+        additionalIncludeDirectories <- additionalIncludeDirectories.Add(projectPath)
+        let dirs = (Seq.toList additionalIncludeDirectories)
+        for fileinclude in Helpers.GetIncludePathsForFile(path, dirs, projectPath) do
+                if not(includes.Contains(fileinclude)) then
+                    includes <- includes.Add(fileinclude)
+
+
 
 let PopulateProjectReferences(item : ProjectItem, project : ProjectTypes.Project, solution : ProjectTypes.Solution) =
     if item.ItemType.Equals("ProjectReference") then
@@ -185,9 +196,14 @@ let PopulateProjectReferences(item : ProjectItem, project : ProjectTypes.Project
                                     
                     printfn "Invalid project reference to external project %s -> %s" project.Path path
                     projectRef
-                                                                                                     
-            project.ProjectReferences.Add(projectRef.Guid, projectRef)
-            project.Visible <- true
+
+            try
+                project.ProjectReferences.Add(projectRef.Guid, projectRef)
+                project.Visible <- true
+            with
+            | ex -> 
+                let data = sprintf "Project contains same reference multiple times: %A %A" projectRef.Guid projectRef
+                Helpers.AddWarning(project.Path, data)
         | _ -> ()                
 
 let CheckAdditionalIncludeDirectories(additionalIncludeDirectories : Set<string>, includes : Set<string>, project : ProjectTypes.Project) =
@@ -204,18 +220,30 @@ let CheckAdditionalIncludeDirectories(additionalIncludeDirectories : Set<string>
         | Some value -> true
         | _ -> false
 
-    additionalIncludeDirectories |> Seq.iter (fun c ->  if not(CheckFileExists(c)) then printfn "Additional Include Path not In Use: %s %s" project.Path c)
+    additionalIncludeDirectories
+        |> Seq.iter
+            (fun c -> 
+                if not(CheckFileExists(c)) then
+                    Helpers.AddWarning(project.Path, (sprintf "Additional Include Path not In Use: %s" c))
+                    )
 
 let HandleCppProjecItems(collectionOfItem : Collections.Generic.ICollection<ProjectItem>, project : ProjectTypes.Project, solution : ProjectTypes.Solution, packagesBase : string, checkRedundantIncludes : bool) =     
     let mutable additionalIncludeDirectories : Set<string> = Set.empty
     let mutable includes : Set<string> = Set.empty
 
-    for item in collectionOfItem do                 
-        PopulateHeaderMatrix(&additionalIncludeDirectories, &includes, item, project, packagesBase)
-        PopulateProjectReferences(item, project, solution)
+    let itemsCollections = collectionOfItem
+                            |> List.ofSeq
+                            |> Array.ofList
+
+    itemsCollections
+        |> Array.iter (fun item ->
+            PopulateHeaderMatrix(&additionalIncludeDirectories, &includes, item, project, packagesBase)
+            PopulateProjectReferences(item, project, solution)
+        ) // parallel
 
     if checkRedundantIncludes then
         CheckAdditionalIncludeDirectories(additionalIncludeDirectories, includes, project)
+
 
 let CreateProjecNodesAndLinks(ignoredPackages : Set<string>, packagesBasePath : string, solution : ProjectTypes.Solution, checkRedundantIncludes : bool) =
 
@@ -224,9 +252,10 @@ let CreateProjecNodesAndLinks(ignoredPackages : Set<string>, packagesBasePath : 
     for project in solution.Projects do
         let extension = Path.GetExtension(project.Value.Path).ToLower()
 
-        if supportedExtensions.Contains(extension) then            
-            try                                
+        if supportedExtensions.Contains(extension) then
+            try
                 if extension = ".vcxproj" then
+                    printf "Handle %A \n" project.Value.Path
                     let msbuildproject = new Microsoft.Build.Evaluation.Project(project.Value.Path)
                     let id = (msbuildproject.Properties |> Seq.find (fun c -> c.Name.Equals("RootNamespace"))).EvaluatedValue
 
@@ -260,7 +289,7 @@ let CreateProjecNodesAndLinks(ignoredPackages : Set<string>, packagesBasePath : 
                     raise (ProjectTypes.CannotFindIdForProject("extension not supported"))
                          
             with
-            | ex -> printf "Failed to create node: %s %s\n" project.Value.Path ex.Message
+            | ex -> printf "Failed to create node: %s %s %s\n" project.Value.Path ex.Message  ex.StackTrace
 
 
 let rec HandleTarget(projectInstance : ProjectTargetInstance,
@@ -275,6 +304,8 @@ let rec HandleTarget(projectInstance : ProjectTargetInstance,
     let newTarget = new ProjectTypes.MsbuildTarget()
     newTarget.Name <- "MSB:" + target
 
+    printf "Handle MSBuild TARGET : %A\n" newTarget.Name
+
     for children in projectInstance.Children do
         try
             let instance = children :?> ProjectTaskInstance
@@ -284,6 +315,7 @@ let rec HandleTarget(projectInstance : ProjectTargetInstance,
 
                 let ProcessProjectForDeps(projectSolution:string) = 
                     if projectSolution.ToLower().EndsWith(".sln") then
+                        printf "Handle Solution : %A\n" projectSolution
                         let solution = CreateSolutionData(projectSolution)
                         CreateProjecNodesAndLinks((nugetIgnorePackages.Split([|';'; '\n'; ' '|], StringSplitOptions.RemoveEmptyEntries) |> Set.ofSeq), nugetPackageBase, solution, checkRedundantIncludes)
                         newTarget.Children <- newTarget.Children.Add(solution.Name, solution)
@@ -305,7 +337,6 @@ let rec HandleTarget(projectInstance : ProjectTargetInstance,
 
                             let ProcessAttribute(attrib:Xml.Linq.XAttribute) = 
                                 if attrib.Name.LocalName.ToLower().Equals("include") then
-                                    printf "%A" attrib.Value
                                     for includeProj in attrib.Value.Split([|';'; '\n'; ' '; '\r'; '$'; '('; ')'|], StringSplitOptions.RemoveEmptyEntries) do
                                         if Path.IsPathRooted(includeProj) then
                                             ProcessProjectForDeps(includeProj)
@@ -400,8 +431,6 @@ let GenerateHeaderDependenciesForTargets(targets : ProjectTypes.MsbuildTarget Li
                 if includeSolutionsSet.IsEmpty || includeSolutionsSet.Contains(solution.Key) then
             
                     let data = solution
-                    printfn "%s" solution.Key
-
                     for project in solution.Value.Projects do
                 
                         for directory in project.Value.DependentDirectories do

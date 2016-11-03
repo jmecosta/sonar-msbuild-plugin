@@ -134,7 +134,7 @@ let main argv =
                 let rules = options.Settings |> Seq.find (fun c -> c.Key.Equals("sonar.msbuild.projectchecker.customrules"))
 
                 if rules.Value <> "" then
-                    for dllPath in rules.Value.Split(';') do                    
+                    for dllPath in rules.Value.Split(';') do
                         printf "    External Analysers: %A\n" dllPath
                         if Path.IsPathRooted(dllPath) then
                             analyser.AddExternalAnalyser(dllPath)
@@ -142,7 +142,7 @@ let main argv =
                             analyser.AddExternalAnalyser(Path.Combine(basePath, dllPath))
 
                 if ingoreFolders <> "" then
-                    for folder in ingoreFolders.Split(';') do                    
+                    for folder in ingoreFolders.Split(';') do
                         if Path.IsPathRooted(folder) then
                             analyser.AddIgnoreIncludeFolder(folder)
                         else 

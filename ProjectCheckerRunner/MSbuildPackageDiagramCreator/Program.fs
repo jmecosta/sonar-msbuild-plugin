@@ -58,6 +58,7 @@ let main argv =
                                                          config.PlotHeaderDependencFilter,
                                                          config.PlotHeaderDependencyInsideProject)
 
+            Helpers.warnings |> Seq.iter (fun c-> (printf "%s => %s\n" c.Path c.Data))
             DgmlHelper.WriteDgmlTargetDocument(outputFile, targets, config)
 
                                      

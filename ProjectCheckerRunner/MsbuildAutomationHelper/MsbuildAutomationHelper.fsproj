@@ -55,6 +55,7 @@
     <Compile Include="VSSolutionUtils.fs" />
     <Compile Include="ProjectTypes.fs" />
     <Compile Include="RuleBase.fs" />
+    <Compile Include="Helpers.fs" />
     <Compile Include="MSBuildHelper.fs" />
     <Content Include="packages.config" />
   </ItemGroup>
