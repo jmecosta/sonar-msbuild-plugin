@@ -15,7 +15,7 @@ let stylesAndEnding = """
     <Category Id="BuildDependency" />
     <Category Id="ProjectDependency" />
     <Category Id="HeaderDependency" />
-    
+    <Category Id="SolutionBuildDependency" />
   </Categories>
   <Styles>
     <Style TargetType="Node" GroupLabel="Project" ValueLabel="True">
@@ -54,6 +54,11 @@ let stylesAndEnding = """
       <Setter Property="Stroke" Expression="Color.FromRgb(30,144,255)" />
     </Style>
 
+    <Style TargetType="Link" GroupLabel="SolutionBuildDependency" ValueLabel="True" >
+      <Condition Expression="HasCategory('SolutionBuildDependency')" />
+      <Setter Property="Stroke" Expression="Color.FromRgb(191,61,182)" />
+    </Style>
+
     <Style TargetType="Link" GroupLabel="ProjectDependency" ValueLabel="True" >
       <Condition Expression="HasCategory('ProjectDependency')" />
       <Setter Property="Stroke" Expression="Color.FromRgb(0,0,204)" />
@@ -90,12 +95,17 @@ let WriteProjectLinks(project : ProjectTypes.Project, file : StreamWriter, confi
             file.WriteLine(line)                 
 
     if config.PlotSolutionBuildDependencies then
-        for packageRef in project.BuildDepencies do
+        for packageRef in project.SolutionInternalBuildDepencies do
             if packageRef.Value.Guid <> Guid.Empty then
                 let line = sprintf """ <Link Source="%s" Target="%s" Category="BuildDependency" /> """ project.Name packageRef.Value.Name
                 file.WriteLine(line)
 
 let WriteSolutionLinks(solution : ProjectTypes.Solution, file : StreamWriter, config : ProjectTypes.ConfigurationXml.Configuration) = 
+
+    for solutionNode in solution.SolutionExternalBuildDepencies do
+        let line = sprintf """ <Link Source="%s" Target="%s" Category="SolutionBuildDependency" /> """ solution.Name solutionNode.Value.Name
+        file.WriteLine(line)
+
     for project in solution.Projects do
         let line = sprintf """ <Link Source="%s" Target="%s" Category="Contains" /> """ solution.Name project.Value.Name
         file.WriteLine(line)

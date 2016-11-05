@@ -25,7 +25,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DocumentationFile>bin\Debug\MSbuildPackageDiagramCreator.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
-    <StartArguments>/m D:\prod\structures\MSBuild\RunFast.msbuild /t:BuildTSAndDotAppsNORPC</StartArguments>
+    <StartArguments>/m D:\prod\structures\MSBuild\RunFast.msbuild /t:BuildCore</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>

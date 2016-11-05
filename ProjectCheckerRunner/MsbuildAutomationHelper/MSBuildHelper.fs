@@ -85,7 +85,7 @@ let CreateSolutionData(solution : string) =
                         
                         projectRef.Visible <- true
                         project.Visible <- true
-                        project.BuildDepencies.Add(projectRef.Guid, projectRef)                    
+                        project.SolutionInternalBuildDepencies.Add(projectRef.Guid, projectRef)                    
                 with
                 | ex -> ()
 
@@ -103,6 +103,54 @@ let CreateSolutionData(solution : string) =
     content |> Seq.iter (fun c -> handleLine(c))
 
     solutionData
+
+
+
+
+let PopulateLinkLibsDepedencies(item : ProjectItemDefinition, project : ProjectTypes.Project, packagesBase : string) = 
+
+    let systemLibs = ["ole32.lib";"user32.lib";"comdlg32.lib"; "advapi32.lib"; 
+                      "uuid.lib";"OldNames.lib";"shell32.lib"; "oleaut32.lib";
+                      "ws2_32.lib";"Advapi32.lib";"odbc32.lib"; "odbccp32.lib"; "msvcrt.lib";
+                      "wsock32.lib";"kernel32.lib"; "Iphlpapi.lib"; "Rpcrt4.lib"; "dbghelp.lib"; "msvcprt.lib";"psapi.lib";
+                      "gdi32.lib"; "winspool.lib" ; "version.lib"; "delayimp.lib"; "Shlwapi.lib"; "comsuppw.lib"; "mscoree.lib"; "msvcmrt.lib"]
+    let AddDepFile(c:string) =
+        if not(project.DepedentLibs.Contains(c)) &&
+            not((systemLibs |> Seq.tryFind (fun lib -> lib.ToLower().Equals(c.ToLower()))).IsSome) && not(c = "") then
+            try
+                // check if its in nuget packages
+                let absS = Path.GetFullPath(c).ToLower()
+                let packagesF = Path.GetFullPath(packagesBase).ToLower()
+                if not(absS.ToLower().Contains(packagesF)) then
+                    if Path.IsPathRooted(c) then
+                        project.DepedentLibs.Add(c) |> ignore
+                    else
+                        project.DepedentLibs.Add(c) |> ignore
+            with
+            | ex -> printfn "Wrong Lib Include path %s -> %s" c project.Path
+
+    let AddLibIncludeDir(c:string) =
+        let path = 
+            if Path.IsPathRooted(c) then
+                c
+            else
+                Path.GetFullPath(Path.Combine(Directory.GetParent(project.Path).ToString(), c))
+
+        if not(project.DepedentLibDirectories.Contains(path)) then
+            project.DepedentLibDirectories.Add(path) |> ignore
+
+    item.Metadata
+        |> List.ofSeq
+        |> Array.ofList
+        |> Array.Parallel.iter (fun item ->
+            if (item.Name.Equals("AdditionalLibraryDirectories")) then
+                item.EvaluatedValue.Split(';') |> Seq.iter (fun c -> AddLibIncludeDir(c))
+            if (item.Name.Equals("AdditionalDependencies")) then
+                item.EvaluatedValue.Split(';') |> Seq.iter (fun c -> AddDepFile(c.Trim()))
+        )
+
+
+
 
 let PopulateHeaderMatrix(additionalIncludeDirectories : byref<Set<string>>, includes : byref<Set<string>>, item : ProjectItem, project : ProjectTypes.Project, packagesBase : string) = 
     if item.ItemType.Equals("ClCompile") then
@@ -127,8 +175,8 @@ let PopulateHeaderMatrix(additionalIncludeDirectories : byref<Set<string>>, incl
                         else
                             let basePath = Directory.GetParent(project.Path).ToString()
                             additionalIncludeDirectories <- additionalIncludeDirectories.Add(Path.GetFullPath(Path.Combine(basePath, path)))
-                    if not(project.DependentDirectories.Contains(path)) then
-                        project.DependentDirectories.Add(path) |> ignore
+                    if not(project.DepedentIncludeDirectories.Contains(path)) then
+                        project.DepedentIncludeDirectories.Add(path) |> ignore
         | _ -> ()
 
         additionalIncludeDirectories <- additionalIncludeDirectories.Add(projectPath)
@@ -227,13 +275,25 @@ let CheckAdditionalIncludeDirectories(additionalIncludeDirectories : Set<string>
                     Helpers.AddWarning(project.Path, (sprintf "Additional Include Path not In Use: %s" c))
                     )
 
-let HandleCppProjecItems(collectionOfItem : Collections.Generic.ICollection<ProjectItem>, project : ProjectTypes.Project, solution : ProjectTypes.Solution, packagesBase : string, checkRedundantIncludes : bool) =     
+let HandleCppProjecItems(projectEvaluated : Project, project : ProjectTypes.Project, solution : ProjectTypes.Solution, packagesBase : string, checkRedundantIncludes : bool) =     
     let mutable additionalIncludeDirectories : Set<string> = Set.empty
     let mutable includes : Set<string> = Set.empty
 
-    let itemsCollections = collectionOfItem
+    let itemsCollections = projectEvaluated.Items
                             |> List.ofSeq
                             |> Array.ofList
+
+    let itemsDefinitions = projectEvaluated.ItemDefinitions
+                            |> List.ofSeq
+                            |> Array.ofList
+
+    itemsDefinitions
+        |> Array.Parallel.iter (fun item ->
+            if (item.Key.Equals("Lib")) then
+                ()
+            if (item.Key.Equals("Link")) then
+                PopulateLinkLibsDepedencies(item.Value, project, packagesBase)
+        ) // parallel
 
     itemsCollections
         |> Array.iter (fun item ->
@@ -244,8 +304,11 @@ let HandleCppProjecItems(collectionOfItem : Collections.Generic.ICollection<Proj
     if checkRedundantIncludes then
         CheckAdditionalIncludeDirectories(additionalIncludeDirectories, includes, project)
 
+// collects data from msbuild
+// does some static checking in data
+let PreprocessDataInProjects(ignoredPackages : Set<string>, packagesBasePath : string, checkRedundantIncludes : bool, solutionPath : string) =
 
-let CreateProjecNodesAndLinks(ignoredPackages : Set<string>, packagesBasePath : string, solution : ProjectTypes.Solution, checkRedundantIncludes : bool) =
+    let solution = CreateSolutionData(solutionPath)
 
     let supportedExtensions = Set.ofList [".vcxproj"]
 
@@ -257,15 +320,20 @@ let CreateProjecNodesAndLinks(ignoredPackages : Set<string>, packagesBasePath : 
                 if extension = ".vcxproj" then
                     printf "Handle %A \n" project.Value.Path
                     let msbuildproject = new Microsoft.Build.Evaluation.Project(project.Value.Path)
-                    let id = (msbuildproject.Properties |> Seq.find (fun c -> c.Name.Equals("RootNamespace"))).EvaluatedValue
 
-                    if not(Path.GetFileNameWithoutExtension(project.Value.Path).ToLower().Equals(id.ToLower())) then
+                    project.Value.Name <- (msbuildproject.Properties |> Seq.find (fun c -> c.Name.Equals("RootNamespace"))).EvaluatedValue
+                    project.Value.ImportLib <- match (msbuildproject.AllEvaluatedItemDefinitionMetadata |> Seq.tryFind (fun c -> c.Name.Equals("ImportLibrary"))) with | Some value -> value.EvaluatedValue | _ -> ""
+
+                    project.Value.Keyword <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("Keyword"))) with | Some value -> value.EvaluatedValue | _ -> ""
+                    project.Value.ConfigurationType <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("ConfigurationType"))) with | Some value -> value.EvaluatedValue | _ -> ""
+                    project.Value.CLRSupport <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("CLRSupport"))) with | Some value -> value.EvaluatedValue | _ -> ""
+                    project.Value.TargetPath <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("TargetPath"))) with | Some value -> value.EvaluatedValue | _ -> ""
+
+                    if not(Path.GetFileNameWithoutExtension(project.Value.Path).ToLower().Equals(project.Value.Name.ToLower())) then
                         raise(ProjectTypes.IncorrectNameForProject("Post Project Incorrectly Named"))
 
-                    project.Value.Name <- id
-
                     let props = msbuildproject.AllEvaluatedProperties
-                    for importProj in msbuildproject.Imports do    
+                    for importProj in msbuildproject.Imports do
                         let importProj = importProj.ImportedProject.FullPath.ToLower().Replace("\\", "/")
                         if importProj.StartsWith(packagesBasePath) then
                             try
@@ -280,18 +348,20 @@ let CreateProjecNodesAndLinks(ignoredPackages : Set<string>, packagesBasePath : 
                             with
                             | ex -> ()
 
-                    HandleCppProjecItems(msbuildproject.Items, project.Value, solution, packagesBasePath, checkRedundantIncludes)
+                    HandleCppProjecItems(msbuildproject, project.Value, solution, packagesBasePath, checkRedundantIncludes)
 
 
                 elif extension = ".csproj" then
                     raise (ProjectTypes.CannotFindIdForProject("extension not supported"))
                 else
                     raise (ProjectTypes.CannotFindIdForProject("extension not supported"))
-                         
             with
-            | ex -> printf "Failed to create node: %s %s %s\n" project.Value.Path ex.Message  ex.StackTrace
+            | ex ->  printf "Failed to create node: %s %s %s\n" project.Value.Path ex.Message  ex.StackTrace
+
+    solution
 
 
+// preporcess targets in msbuild files
 let rec HandleTarget(projectInstance : ProjectTargetInstance,
                      msbuildproject : Microsoft.Build.Evaluation.Project,
                      target : string,
@@ -302,69 +372,81 @@ let rec HandleTarget(projectInstance : ProjectTargetInstance,
     
     let targetdata = msbuildproject.Targets.[target]
     let newTarget = new ProjectTypes.MsbuildTarget()
+    let mutable childSolutionsFound = List.empty
     newTarget.Name <- "MSB:" + target
 
     printf "Handle MSBuild TARGET : %A\n" newTarget.Name
 
-    for children in projectInstance.Children do
-        try
-            let instance = children :?> ProjectTaskInstance
-            if instance.Name.Equals("MSBuild") then
-                let projects = instance.Parameters.["Projects"]
-                let fullElements = projects.Split([|';'; '\n'; ' '; '\r';|], StringSplitOptions.RemoveEmptyEntries)
+    let ProcessProjectForDeps(projectSolution:string) = 
+        if projectSolution.ToLower().EndsWith(".sln") then
+            printf "Handle Solution : %A\n" projectSolution
+            let nugetExclusions = (nugetIgnorePackages.Split([|';'; '\n'; ' '|], StringSplitOptions.RemoveEmptyEntries) |> Set.ofSeq)
+            let solutionData = PreprocessDataInProjects(nugetExclusions, nugetPackageBase, checkRedundantIncludes, projectSolution)
+            if not(newTarget.Children.ContainsKey(solutionData.Name)) then
+                childSolutionsFound <- childSolutionsFound @ [solutionData]
+                newTarget.Children <- newTarget.Children.Add(solutionData.Name, solutionData)
 
-                let ProcessProjectForDeps(projectSolution:string) = 
-                    if projectSolution.ToLower().EndsWith(".sln") then
-                        printf "Handle Solution : %A\n" projectSolution
-                        let solution = CreateSolutionData(projectSolution)
-                        CreateProjecNodesAndLinks((nugetIgnorePackages.Split([|';'; '\n'; ' '|], StringSplitOptions.RemoveEmptyEntries) |> Set.ofSeq), nugetPackageBase, solution, checkRedundantIncludes)
-                        newTarget.Children <- newTarget.Children.Add(solution.Name, solution)
+    let processXmlElements(topLevel:Xml.Linq.XElement, solution:string) = 
+        let ProcessElement(elem:Xml.Linq.XElement) = 
+            let ProcessAttribute(attrib:Xml.Linq.XAttribute) = 
+                if attrib.Name.LocalName.ToLower().Equals("include") then
+                    let mutable solDataM = null
+                    let GetSolutionDataFromEvalData(mmm:string) = 
+                        if Path.IsPathRooted(mmm) then
+                            ProcessProjectForDeps(mmm)
+                        else
+                            let value = (msbuildproject.GetPropertyValue(mmm))
+                            if value <> "" then
+                                ProcessProjectForDeps(value)
 
-                for project in projects.Split([|';'; '\n'; ' '; '\r'; '$'; '('; ')'; '@'; '%'|], StringSplitOptions.RemoveEmptyEntries) do
-                    let value = (msbuildproject.GetPropertyValue(project))
+                    let dataValues = attrib.Value.Split([|';'; '\n'; ' '; '\r'; '$'; '('; ')'|], StringSplitOptions.RemoveEmptyEntries)
+                    dataValues |> Seq.iter (fun c -> GetSolutionDataFromEvalData(c))
 
-                    if value <> "" then
-                        ProcessProjectForDeps(value)
-                    else
-                        // not able to evaluate data, search in file for property
-                        let xmlData = 
-                            if not(BuildScripts.ContainsKey(children.FullPath)) then
-                                BuildScripts <- BuildScripts.Add(children.FullPath, ProjectTypes.ProjType.Parse(File.ReadAllText(children.FullPath)))
+            let localName = elem.Name.LocalName
+            if localName.Equals(solution) then
+                elem.Attributes() |> Seq.iter (fun x -> ProcessAttribute(x))
 
-                            BuildScripts.[children.FullPath]
+        topLevel.Elements() |> Seq.iter (fun elem -> ProcessElement(elem))
 
-                        let processXmlElements(topLevel:Xml.Linq.XElement) = 
+    let ProcessSolution(solution:string, children:ProjectTaskInstance) = 
+        let value = (msbuildproject.GetPropertyValue(solution))
 
-                            let ProcessAttribute(attrib:Xml.Linq.XAttribute) = 
-                                if attrib.Name.LocalName.ToLower().Equals("include") then
-                                    for includeProj in attrib.Value.Split([|';'; '\n'; ' '; '\r'; '$'; '('; ')'|], StringSplitOptions.RemoveEmptyEntries) do
-                                        if Path.IsPathRooted(includeProj) then
-                                            ProcessProjectForDeps(includeProj)
-                                        else
-                                            let value = (msbuildproject.GetPropertyValue(includeProj))
-                                            if value <> "" then
-                                                ProcessProjectForDeps(value)
+        if value <> "" then
+            ProcessProjectForDeps(value)
+        else
+            // not able to evaluate data, search in file for property
+            let xmlData = 
+                if not(BuildScripts.ContainsKey(children.FullPath)) then
+                    BuildScripts <- BuildScripts.Add(children.FullPath, ProjectTypes.ProjType.Parse(File.ReadAllText(children.FullPath)))
 
-                            let ProcessElement(elem:Xml.Linq.XElement) = 
-                                let localName = elem.Name.LocalName
-                                if localName.Equals(project) then
-                                    elem.Attributes() |> Seq.iter (fun x -> ProcessAttribute(x))
+                BuildScripts.[children.FullPath]
 
-                            topLevel.Elements() |> Seq.iter (fun elem -> ProcessElement(elem))
+            let targetSubData = xmlData.Targets |> Seq.tryFind(fun x -> x.Name.Equals(target))
+            match targetSubData with
+            | Some target -> target.ItemGroups |> Seq.iter (fun x -> processXmlElements(x.XElement, solution))
+            | _ -> ()
 
-                        let targetSubData = xmlData.Targets |> Seq.tryFind(fun x -> x.Name.Equals(target))
-                        match targetSubData with
-                        | Some target -> target.ItemGroups |> Seq.iter (fun x -> processXmlElements(x.XElement))
-                        | _ -> ()
-                        ()
 
-        with
-        | ex -> ()
-        
+    let ProcessChild(children:ProjectTaskInstance) = 
+        let msbuildProjects = children.Parameters.["Projects"]
+        let elements = msbuildProjects.Split([|';'; '\n'; ' '; '\r'; '$'; '('; ')'; '@'; '%'|], StringSplitOptions.RemoveEmptyEntries)
+        elements
+            |> Array.ofSeq
+            |> Array.iter (fun solutionName -> ProcessSolution(solutionName, children))
 
+    // handle children inside target
+    projectInstance.Children
+        |> Array.ofSeq
+        |> Array.iter (fun c-> 
+            try
+                let children = c :?> ProjectTaskInstance
+                if children.Name.Equals("MSBuild") then ProcessChild children
+            with | ex -> ())
+
+    // handle dependencies
     for dep in projectInstance.DependsOnTargets.Split([|';'; '\n'; ' '; '\r'|], StringSplitOptions.RemoveEmptyEntries) do
         if dep <> "" then
-            let data = msbuildproject.Targets.[dep]            
+            let data = msbuildproject.Targets.[dep]
             let name, depTarget = HandleTarget(data, msbuildproject, dep, &targets, nugetPackageBase, nugetIgnorePackages, checkRedundantIncludes)            
             newTarget.MsbuildTargetDependencies <- newTarget.MsbuildTargetDependencies.Add(name, depTarget)
     
@@ -393,7 +475,7 @@ let GenerateHeaderDependencies(solutionList : ProjectTypes.Solution List,
         for solution in solutionList do
             if includeSolutionsSet.IsEmpty || includeSolutionsSet.Contains(solution.Name) then
                 for project in solution.Projects do
-                    for directory in project.Value.DependentDirectories do
+                    for directory in project.Value.DepedentIncludeDirectories do
                         let directoryAbs = Path.GetFullPath(directory).ToLower().Replace("\\", "/")
 
                         if not(ignoreSet.Contains(directoryAbs)) then
@@ -420,7 +502,84 @@ let GenerateHeaderDependencies(solutionList : ProjectTypes.Solution List,
                                     with
                                     | ex -> ()
 
-let GenerateHeaderDependenciesForTargets(targets : ProjectTypes.MsbuildTarget List, plotHeaderDependency : bool, ignoreIncludeFolders : string, plotHeaderDependencFilter : string, plotHeaderDependencyInsideProject : bool) =
+
+
+
+let GenerateExternalBuildDependenciesForSolutions(targets : ProjectTypes.MsbuildTarget List) = 
+
+
+    let GenerateExternalDepForSolution(solutionIn : ProjectTypes.Solution, targets : ProjectTypes.MsbuildTarget List) = 
+
+        let GetPotencialProjectsThatGenerateLib(lib:string) = 
+            let datalib = 
+                if Path.IsPathRooted(lib) then
+                    Path.GetFileName(lib).ToLower()
+                else
+                    lib.ToLower()
+
+            let mutable solutionsThatGenerateLib = Map.empty
+
+            targets
+                |> Array.ofSeq
+                |> Array.iter
+                    (fun target ->
+                        target.Children
+                            |> Array.ofSeq
+                            |> Array.iter (fun solution -> 
+                                solution.Value.Projects
+                                    |> Array.ofSeq
+                                    |> Array.iter (fun project ->
+                                                        if project.Value.ImportLib <> "" then
+                                                            if Path.GetFullPath(project.Value.ImportLib).ToLower().EndsWith("\\" + datalib) then
+                                                                if not(solutionsThatGenerateLib.ContainsKey(solution.Value.Name)) && solution.Value.Name <> solutionIn.Name then
+                                                                    solutionsThatGenerateLib <- solutionsThatGenerateLib.Add(solution.Value.Name, solution.Value)
+                                                )
+                                        )
+                                    )
+
+            solutionsThatGenerateLib
+
+        let mutable listOfLibsLink : string Set = Set.empty
+        let mutable allowedSearchFolders : string Set = Set.empty
+
+        // lets collect all link information
+        solutionIn.Projects
+            |> Array.ofSeq
+            |> Array.iter (fun b ->
+                b.Value.DepedentLibs |> Seq.iter (fun c ->
+                    (if not(listOfLibsLink.Contains(c)) then listOfLibsLink <- listOfLibsLink.Add(c)))
+                b.Value.DepedentIncludeDirectories |> Seq.iter (fun c ->
+                    (if not(allowedSearchFolders.Contains(c)) then allowedSearchFolders <- allowedSearchFolders.Add(c))))
+
+        listOfLibsLink
+            |> Array.ofSeq
+            |> Array.iter (fun lib -> 
+                // try find all projects that potencially can create this lib. With Absolute Paths
+                let potentialCandidates = GetPotencialProjectsThatGenerateLib lib
+
+                if potentialCandidates.Count > 1 then
+                    Helpers.AddWarning(solutionIn.Name, sprintf "More than one solution is found that can used to link to this project %s %A\n" lib potentialCandidates)
+
+                for candidate in potentialCandidates do
+                    if not(solutionIn.SolutionExternalBuildDepencies.ContainsKey(candidate.Key)) then
+                        solutionIn.SolutionExternalBuildDepencies.Add(candidate.Key, candidate.Value)
+                )
+
+    targets
+        |> Array.ofSeq
+        |> Array.iter (fun target ->
+        target.Children
+            |> Array.ofSeq
+            |> Array.iter (fun solution -> 
+                GenerateExternalDepForSolution(solution.Value, targets)
+        ))
+    ()
+
+// evaluates projects and generate all needed dependencies for project
+// implemented:
+//    header
+//    libs
+let GenerateDependenciesForTargets(targets : ProjectTypes.MsbuildTarget List, plotHeaderDependency : bool, ignoreIncludeFolders : string, plotHeaderDependencFilter : string, plotHeaderDependencyInsideProject : bool) =
     
     if plotHeaderDependency then
         let ignoreSet = (ignoreIncludeFolders.Split([|';'; '\n'; ' '|], StringSplitOptions.RemoveEmptyEntries) |> Set.ofSeq)
@@ -433,7 +592,7 @@ let GenerateHeaderDependenciesForTargets(targets : ProjectTypes.MsbuildTarget Li
                     let data = solution
                     for project in solution.Value.Projects do
                 
-                        for directory in project.Value.DependentDirectories do
+                        for directory in project.Value.DepedentIncludeDirectories do
 
                             let directoryAbs = Path.GetFullPath(directory).ToLower().Replace("\\", "/")
 
@@ -464,7 +623,7 @@ let GenerateHeaderDependenciesForTargets(targets : ProjectTypes.MsbuildTarget Li
 
 
 let CreateTargetTree(path : string, target : string,
-                     nugetPackageBase : string,
+                     nugetPackageBase : string, 
                      nugetIgnorePackages : string,
                      checkRedundantIncludes : bool,
                      plotHeaderDependency : bool,
@@ -474,8 +633,15 @@ let CreateTargetTree(path : string, target : string,
     let mutable targets : ProjectTypes.MsbuildTarget List = List.Empty
     let msbuildproject = new Microsoft.Build.Evaluation.Project(path)
     let data = msbuildproject.Targets.[target]
+
+    // collect pre processing information
     HandleTarget(data, msbuildproject, target, &targets, nugetPackageBase, nugetIgnorePackages, checkRedundantIncludes) |> ignore
-    GenerateHeaderDependenciesForTargets(targets, plotHeaderDependency, ignoreIncludeFolders, plotHeaderDependencFilter, plotHeaderDependencyInsideProject)
+
+    // generate build deps between existing solutions
+    GenerateExternalBuildDependenciesForSolutions(targets)
+
+    // generate build deps between existing targets
+    GenerateDependenciesForTargets(targets, plotHeaderDependency, ignoreIncludeFolders, plotHeaderDependencFilter, plotHeaderDependencyInsideProject)
     targets
 
 let GetProjectFilePathForFile(projectPath : string, fileName : string) =

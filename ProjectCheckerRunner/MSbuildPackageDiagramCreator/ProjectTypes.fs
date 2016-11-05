@@ -19,8 +19,9 @@ type ConfigurationXml = XmlProvider<"""<?xml version="1.0" encoding="utf-8"?>
     <CheckRedundantIncludes>false</CheckRedundantIncludes>
     <PlotPackagesDependecies>false</PlotPackagesDependecies>
     <PlotProjectDependencies>false</PlotProjectDependencies>
-    <PlotSolutionBuildDependencies>false</PlotSolutionBuildDependencies>
     <PlotHeaderDependencyInsideProject>false</PlotHeaderDependencyInsideProject>
+    <PlotSolutionBuildDependencies>true</PlotSolutionBuildDependencies>
+    <PlotSolutionExternalBuildDependencies>true</PlotSolutionExternalBuildDependencies>
     <PlotHeaderDependencFilter>
         SLN:Solution1;
         SLN:Solution2;
@@ -41,6 +42,7 @@ let DefaultConfigXml = """<?xml version="1.0" encoding="utf-8"?>
     <PlotPackagesDependecies>false</PlotPackagesDependecies>
     <PlotProjectDependencies>true</PlotProjectDependencies>
     <PlotSolutionBuildDependencies>true</PlotSolutionBuildDependencies>
+    <PlotSolutionExternalBuildDependencies>true</PlotSolutionExternalBuildDependencies>
     <PlotHeaderDependencyInsideProject>false</PlotHeaderDependencyInsideProject>
     <PlotHeaderDependencFilter></PlotHeaderDependencFilter>
     <PlotSolutionNodeFilter></PlotSolutionNodeFilter>
