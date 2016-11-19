@@ -2,7 +2,7 @@
 <package>
     <metadata>
         <id>MsbuildAutomationHelper</id>
-        <version>1.2</version>
+        <version>1.4.0</version>
         <authors>Jorge Costa</authors>
         <owners>Trimble Solutions Corporation</owners>
         <licenseUrl>https://github.com/TeklaCorp/sonar-msbuild-plugin/blob/master/LICENSE</licenseUrl>
@@ -18,6 +18,6 @@
          </references>
     </metadata>
     <files>
-        <file src="..\MsbuildAutomationHelper\bin\Release\MsbuildAutomationHelper.dll" target="lib" />
+        <file src="..\BuildDrop\vs15\MsbuildAutomationHelper.dll" target="lib" />
     </files>
 </package>

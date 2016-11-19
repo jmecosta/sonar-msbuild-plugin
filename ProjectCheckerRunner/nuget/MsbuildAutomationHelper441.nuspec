@@ -1,21 +1,23 @@
 <?xml version="1.0"?>
 <package>
     <metadata>
-        <id>MSbuildPackageDiagramCreator</id>
-        <version>1.3.6</version>
+        <id>MsbuildAutomationHelper</id>
+        <version>1.4.0</version>
         <authors>Jorge Costa</authors>
         <owners>Trimble Solutions Corporation</owners>
         <licenseUrl>https://github.com/TeklaCorp/sonar-msbuild-plugin/blob/master/LICENSE</licenseUrl>
         <projectUrl>https://github.com/TeklaCorp/sonar-msbuild-plugin</projectUrl>
         <iconUrl>https://github.com/TeklaCorp/sonar-msbuild-plugin/blob/master/Icon.ico</iconUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
-        <description>MSBuild Dgml creator for native projects, with nuget support</description>
+        <description>MSBuild Automation Helper to Support SonarQube MSBuild Plugin</description>
         <releaseNotes>Initial Package.</releaseNotes>
         <copyright>Copyright © 1992-2015 Trimble Solutions Corporation and its licensors. All rights reserved.</copyright>
         <tags></tags>
+        <references>
+            <reference file="MsbuildAutomationHelper.dll" />
+         </references>
     </metadata>
     <files>
-        <file src="..\BuildDrop\vs15\*.dll" target="lib" />
-        <file src="..\BuildDrop\vs15\MSbuildPackageDiagramCreator.exe" target="lib" />
+        <file src="..\BuildDrop\vs17\MsbuildAutomationHelper.dll" target="lib" />
     </files>
 </package>

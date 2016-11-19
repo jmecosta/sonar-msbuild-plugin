@@ -15,14 +15,17 @@ type IncludeFolderNotUsedDuringInCompilation() =
         new Rule(Key = "IncludeFileNotFound",
                  Description = "Additional include folder used during compilation can be removed as it is not used")
 
+    let mutable additionalIncludeDirectories : Set<string> = Set.empty
+    let mutable includes : Set<string> = Set.empty
+
     override this.SupportsProject(path) =
         path.EndsWith(".vcxproj")
 
     override this.ExecuteCheckMsbuild(project, path, lines, solution, outputPath, includefolderstoignore) =
 
         try
-            let mutable additionalIncludeDirectories : Set<string> = Set.empty
-            let mutable includes : Set<string> = Set.empty
+            additionalIncludeDirectories <- Set.empty
+            includes <- Set.empty
 
             for item in project.Items do
                 try            

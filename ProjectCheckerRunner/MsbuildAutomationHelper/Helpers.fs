@@ -93,6 +93,9 @@ let EnumerateFilesInIncludeDir(additionalIncludeDirectories : string list, proje
     | ex -> printf "Failed to Enumerte Dirs node: %A %s %s\n" additionalIncludeDirectories ex.Message  ex.StackTrace
     
 
+// FSharp 4.3.1 compatibility
+let mutable headersData : string [] = Array.empty
+
 // gets include files for header, should follow paths upstream.
 let GetIncludePathsForFile(pathInput : string, additionalIncludeDirectories : string list, projectPath : string) =
 
@@ -103,7 +106,7 @@ let GetIncludePathsForFile(pathInput : string, additionalIncludeDirectories : st
 
         let rec CheckFile(fileToCheck:string, stack:ImmutableStack<string>) = 
             //printf "Recursion Follow %s \n" fileToCheck
-            let mutable headersData : string [] = Array.empty
+            headersData <- Array.empty
             let CheckLine(line:string, originalFile:string) = 
                 let AddHeader(matchdata:Match) =
                     let fileFound = matchdata.Groups.[1].Value

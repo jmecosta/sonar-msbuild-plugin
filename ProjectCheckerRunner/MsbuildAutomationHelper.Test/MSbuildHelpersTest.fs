@@ -11,7 +11,7 @@ type MSbuildHelpers() =
     
     let assemblyRunningPath = Directory.GetParent(Assembly.GetExecutingAssembly().Location).ToString()
 
-    [<Test>]
+    //[<Test>]
     member test.``Should Load External Checkes`` () = 
         let checks = MSBuildHelper.LoadChecksFromPath(Path.Combine(assemblyRunningPath, "DummyChecks.dll"))
         Assert.That(checks.Length, Is.EqualTo(6))

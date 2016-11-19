@@ -47,11 +47,11 @@ let main argv =
         elif arguments.ContainsKey("m") then
             let file = arguments.["m"] |> Seq.head
             let target = arguments.["t"] |> Seq.head
+
             let targets = MSBuildHelper.CreateTargetTree(file, 
                                                          target,
                                                          config.PackageBasePath,
                                                          config.IgnoreNugetPackages,
-                                                         config.CheckRedundantIncludes,
                                                          config.PlotHeaderDependency,
                                                          config.IgnoreIncludeFolders,
                                                          config.PlotHeaderDependencFilter,

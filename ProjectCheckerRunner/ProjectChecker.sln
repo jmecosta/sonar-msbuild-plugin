@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.23107.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.25914.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ProjectCheckerTask", "ProjectCheckerTask\ProjectCheckerTask.fsproj", "{F02E14B7-F4CD-430F-9078-B3F06A67C404}"
 EndProject
@@ -14,6 +14,15 @@ EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MsbuildAutomationHelper", "MsbuildAutomationHelper\MsbuildAutomationHelper.fsproj", "{49F98A4D-DA45-4E7A-8E37-70D62A036283}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MsbuildAutomationHelper.Test", "MsbuildAutomationHelper.Test\MsbuildAutomationHelper.Test.fsproj", "{F8CC7EF2-7B2D-4882-91FD-42928814EDD6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C015577B-7995-4933-9193-5B4D7BA4E423}"
+	ProjectSection(SolutionItems) = preProject
+		nuget\MsbuildAutomationHelper431.nuspec = nuget\MsbuildAutomationHelper431.nuspec
+		nuget\MsbuildAutomationHelper440.nuspec = nuget\MsbuildAutomationHelper440.nuspec
+		nuget\MsbuildAutomationHelper441.nuspec = nuget\MsbuildAutomationHelper441.nuspec
+		nuget\MSbuildPackageDiagramCreator.nuspec = nuget\MSbuildPackageDiagramCreator.nuspec
+		nuget\ProjectCheckerRunner.nuspec = nuget\ProjectCheckerRunner.nuspec
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -3,3 +3,5 @@ ProjectCheckerRunner/MSBuild
 *.unittest.report.xml
 .sonar
 *.coverage.xml
+ProjectCheckerRunner/BuildDrop/**
+ProjectCheckerRunner/buildlog*

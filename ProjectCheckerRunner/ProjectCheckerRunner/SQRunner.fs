@@ -15,6 +15,7 @@ type SQAnalyser() =
     let mutable externalDlls : string List = List.Empty
     let mutable ingoreFolder : string List = List.Empty
     let resourcesLocker = new System.Object()
+    let mutable foundErrors = false
 
     member this.AddExternalAnalyser(path : string) =  
         if path <> "" then
@@ -52,9 +53,8 @@ type SQAnalyser() =
                 List.Empty
 
 
-
     member this.ReportWarnings() = 
-        let mutable foundErrors = false
+        foundErrors <- false
         for resource in resources do
             resource.Issues |> Seq.iter (fun diagnostic ->
                 let status =

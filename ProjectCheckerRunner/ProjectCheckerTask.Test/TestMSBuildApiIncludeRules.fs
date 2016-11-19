@@ -114,4 +114,4 @@ type MSBuildApiIncludesTests() =
         let Rule = new IncludeFolderNotUsedDuringInCompilation()
         let msbuildproject = new Microsoft.Build.Evaluation.Project(projectPath)
         (Rule :> RuleBase).ExecuteCheckMsbuild(msbuildproject, projectPath, Array.empty, "", "", List.Empty)
-        Assert.That((Rule :> RuleBase).GetIssues().Length, Is.EqualTo(4))
+        Assert.That((Rule :> RuleBase).GetIssues().Length, Is.EqualTo(6))

@@ -40,7 +40,7 @@ let mutable projectData = List.Empty
 let CreateSolutionData(solution : string) =
     let solutionData = new ProjectTypes.Solution()
     solutionData.Name <- "SLN:" + Path.GetFileNameWithoutExtension(solution)
-
+    solutionData.Path <- solution
     let content = File.ReadAllLines(solution)
 
     projectData <- List.Empty
@@ -71,21 +71,22 @@ let CreateSolutionData(solution : string) =
                         let projeRef = new ProjectTypes.Project()
                         let rawid = line.Trim().Split('=').[0].Trim()
                         let id = rawid.Replace("\"", "")
-                        let projectRef =                         
-                            if not(solutionData.Projects.ContainsKey(new Guid(id))) then
-                                let projectRef = new ProjectTypes.Project()
-                                projectRef.Guid <- new Guid(id)
-                                if projectRef.Name = "" then
-                                    raise(ProjectTypes.IncorrectNameForProject("Post Project Incorrectly Named"))
 
+                        if not(solutionData.Projects.ContainsKey(new Guid(id))) then
+                            let projectRef = new ProjectTypes.Project()
+                            projectRef.Guid <- new Guid(id)
+                            if not(projectRef.Name = "") then
                                 solutionData.Projects.Add(projectRef.Guid, projectRef)
-                                projectRef
-                            else
-                                solutionData.Projects.[new Guid(id)]
+                                projectRef.Visible <- true
+                                project.Visible <- true
+                                project.SolutionInternalBuildDepencies.Add(projectRef.Guid, projectRef)
+                        else
+                            let projectRef= solutionData.Projects.[new Guid(id)]
+                            projectRef.Visible <- true
+                            project.Visible <- true
+                            project.SolutionInternalBuildDepencies.Add(projectRef.Guid, projectRef)
                         
-                        projectRef.Visible <- true
-                        project.Visible <- true
-                        project.SolutionInternalBuildDepencies.Add(projectRef.Guid, projectRef)                    
+                    
                 with
                 | ex -> ()
 
@@ -117,7 +118,8 @@ let PopulateLinkLibsDepedencies(item : ProjectItemDefinition, project : ProjectT
     let AddDepFile(c:string) =
         if not(project.DepedentLibs.Contains(c)) &&
             not((systemLibs |> Seq.tryFind (fun lib -> lib.ToLower().Equals(c.ToLower()))).IsSome) && not(c = "") then
-            try
+
+            if not(c.Contains("*")) then
                 // check if its in nuget packages
                 let absS = Path.GetFullPath(c).ToLower()
                 let packagesF = Path.GetFullPath(packagesBase).ToLower()
@@ -126,8 +128,8 @@ let PopulateLinkLibsDepedencies(item : ProjectItemDefinition, project : ProjectT
                         project.DepedentLibs.Add(c) |> ignore
                     else
                         project.DepedentLibs.Add(c) |> ignore
-            with
-            | ex -> printfn "Wrong Lib Include path %s -> %s" c project.Path
+            else
+                printfn "Wrong Lib Include path %s -> %s" c project.Path
 
     let AddLibIncludeDir(c:string) =
         let path = 
@@ -245,14 +247,13 @@ let PopulateProjectReferences(item : ProjectItem, project : ProjectTypes.Project
                     printfn "Invalid project reference to external project %s -> %s" project.Path path
                     projectRef
 
-            try
+            if not(project.ProjectReferences.ContainsKey(projectRef.Guid)) then
                 project.ProjectReferences.Add(projectRef.Guid, projectRef)
                 project.Visible <- true
-            with
-            | ex -> 
+            else
                 let data = sprintf "Project contains same reference multiple times: %A %A" projectRef.Guid projectRef
                 Helpers.AddWarning(project.Path, data)
-        | _ -> ()                
+        | _ -> ()
 
 let CheckAdditionalIncludeDirectories(additionalIncludeDirectories : Set<string>, includes : Set<string>, project : ProjectTypes.Project) =
 
@@ -275,38 +276,33 @@ let CheckAdditionalIncludeDirectories(additionalIncludeDirectories : Set<string>
                     Helpers.AddWarning(project.Path, (sprintf "Additional Include Path not In Use: %s" c))
                     )
 
-let HandleCppProjecItems(projectEvaluated : Project, project : ProjectTypes.Project, solution : ProjectTypes.Solution, packagesBase : string, checkRedundantIncludes : bool) =     
-    let mutable additionalIncludeDirectories : Set<string> = Set.empty
-    let mutable includes : Set<string> = Set.empty
+let mutable additionalIncludeDirectories : Set<string> = Set.empty
+let mutable includes : Set<string> = Set.empty
 
-    let itemsCollections = projectEvaluated.Items
-                            |> List.ofSeq
-                            |> Array.ofList
+let HandleCppProjecItems(projectEvaluated : Project, project : ProjectTypes.Project, solution : ProjectTypes.Solution, packagesBase : string, processIncludes : bool) = 
+    additionalIncludeDirectories <- Set.empty
+    includes <- Set.empty
 
-    let itemsDefinitions = projectEvaluated.ItemDefinitions
-                            |> List.ofSeq
-                            |> Array.ofList
-
-    itemsDefinitions
-        |> Array.Parallel.iter (fun item ->
-            if (item.Key.Equals("Lib")) then
-                ()
-            if (item.Key.Equals("Link")) then
-                PopulateLinkLibsDepedencies(item.Value, project, packagesBase)
-        ) // parallel
-
-    itemsCollections
+    projectEvaluated.Items
+        |> List.ofSeq
+        |> Array.ofList
         |> Array.iter (fun item ->
-            PopulateHeaderMatrix(&additionalIncludeDirectories, &includes, item, project, packagesBase)
-            PopulateProjectReferences(item, project, solution)
-        ) // parallel
+            if processIncludes then
+                PopulateHeaderMatrix(&additionalIncludeDirectories, &includes, item, project, packagesBase)
+            PopulateProjectReferences(item, project, solution))
 
-    if checkRedundantIncludes then
-        CheckAdditionalIncludeDirectories(additionalIncludeDirectories, includes, project)
+    projectEvaluated.ItemDefinitions
+        |> List.ofSeq
+        |> Array.ofList
+        |> Array.Parallel.iter (fun item ->
+            if (item.Key.Equals("Link")) then
+                PopulateLinkLibsDepedencies(item.Value, project, packagesBase))
+
+    CheckAdditionalIncludeDirectories(additionalIncludeDirectories, includes, project)
 
 // collects data from msbuild
 // does some static checking in data
-let PreprocessDataInProjects(ignoredPackages : Set<string>, packagesBasePath : string, checkRedundantIncludes : bool, solutionPath : string) =
+let PreprocessDataInProjects(ignoredPackages : Set<string>, packagesBasePath : string, processIncludes : bool, solutionPath : string) =
 
     let solution = CreateSolutionData(solutionPath)
 
@@ -348,8 +344,9 @@ let PreprocessDataInProjects(ignoredPackages : Set<string>, packagesBasePath : s
                             with
                             | ex -> ()
 
-                    HandleCppProjecItems(msbuildproject, project.Value, solution, packagesBasePath, checkRedundantIncludes)
+                    HandleCppProjecItems(msbuildproject, project.Value, solution, packagesBasePath, processIncludes)
 
+                    ProjectCollection.GlobalProjectCollection.UnloadProject(msbuildproject)
 
                 elif extension = ".csproj" then
                     raise (ProjectTypes.CannotFindIdForProject("extension not supported"))
@@ -361,6 +358,7 @@ let PreprocessDataInProjects(ignoredPackages : Set<string>, packagesBasePath : s
     solution
 
 
+let mutable childSolutionsFound = List.empty
 // preporcess targets in msbuild files
 let rec HandleTarget(projectInstance : ProjectTargetInstance,
                      msbuildproject : Microsoft.Build.Evaluation.Project,
@@ -368,11 +366,11 @@ let rec HandleTarget(projectInstance : ProjectTargetInstance,
                      targets : byref<ProjectTypes.MsbuildTarget List>,
                      nugetPackageBase : string,
                      nugetIgnorePackages : string,
-                     checkRedundantIncludes : bool) =
+                     processIncludes : bool) =
     
     let targetdata = msbuildproject.Targets.[target]
     let newTarget = new ProjectTypes.MsbuildTarget()
-    let mutable childSolutionsFound = List.empty
+    childSolutionsFound <- List.empty
     newTarget.Name <- "MSB:" + target
 
     printf "Handle MSBuild TARGET : %A\n" newTarget.Name
@@ -381,7 +379,7 @@ let rec HandleTarget(projectInstance : ProjectTargetInstance,
         if projectSolution.ToLower().EndsWith(".sln") then
             printf "Handle Solution : %A\n" projectSolution
             let nugetExclusions = (nugetIgnorePackages.Split([|';'; '\n'; ' '|], StringSplitOptions.RemoveEmptyEntries) |> Set.ofSeq)
-            let solutionData = PreprocessDataInProjects(nugetExclusions, nugetPackageBase, checkRedundantIncludes, projectSolution)
+            let solutionData = PreprocessDataInProjects(nugetExclusions, nugetPackageBase, processIncludes, projectSolution)
             if not(newTarget.Children.ContainsKey(solutionData.Name)) then
                 childSolutionsFound <- childSolutionsFound @ [solutionData]
                 newTarget.Children <- newTarget.Children.Add(solutionData.Name, solutionData)
@@ -447,7 +445,7 @@ let rec HandleTarget(projectInstance : ProjectTargetInstance,
     for dep in projectInstance.DependsOnTargets.Split([|';'; '\n'; ' '; '\r'|], StringSplitOptions.RemoveEmptyEntries) do
         if dep <> "" then
             let data = msbuildproject.Targets.[dep]
-            let name, depTarget = HandleTarget(data, msbuildproject, dep, &targets, nugetPackageBase, nugetIgnorePackages, checkRedundantIncludes)            
+            let name, depTarget = HandleTarget(data, msbuildproject, dep, &targets, nugetPackageBase, nugetIgnorePackages, processIncludes)
             newTarget.MsbuildTargetDependencies <- newTarget.MsbuildTargetDependencies.Add(name, depTarget)
     
     targets <- targets @ [newTarget]
@@ -467,7 +465,8 @@ let FindDependencyInSolution(directory : string, solution : ProjectTypes.Solutio
 let GenerateHeaderDependencies(solutionList : ProjectTypes.Solution List,
                                plotHeaderDependency : bool,
                                ignoreIncludeFolders : string,
-                               plotHeaderDependencFilter : string, plotHeaderDependencyInsideProject : bool) =
+                               plotHeaderDependencFilter : string,
+                               plotHeaderDependencyInsideProject : bool) =
 
     if plotHeaderDependency then
         let ignoreSet = (ignoreIncludeFolders.Split([|';'; '\n'; ' '|], StringSplitOptions.RemoveEmptyEntries) |> Set.ofSeq)
@@ -504,6 +503,9 @@ let GenerateHeaderDependencies(solutionList : ProjectTypes.Solution List,
 
 
 
+let mutable solutionsThatGenerateLib = Map.empty
+let mutable listOfLibsLink : string Set = Set.empty
+let mutable allowedSearchFolders : string Set = Set.empty
 
 let GenerateExternalBuildDependenciesForSolutions(targets : ProjectTypes.MsbuildTarget List) = 
 
@@ -517,7 +519,7 @@ let GenerateExternalBuildDependenciesForSolutions(targets : ProjectTypes.Msbuild
                 else
                     lib.ToLower()
 
-            let mutable solutionsThatGenerateLib = Map.empty
+            solutionsThatGenerateLib <- Map.empty
 
             targets
                 |> Array.ofSeq
@@ -539,8 +541,8 @@ let GenerateExternalBuildDependenciesForSolutions(targets : ProjectTypes.Msbuild
 
             solutionsThatGenerateLib
 
-        let mutable listOfLibsLink : string Set = Set.empty
-        let mutable allowedSearchFolders : string Set = Set.empty
+        listOfLibsLink <- Set.empty
+        allowedSearchFolders <- Set.empty
 
         // lets collect all link information
         solutionIn.Projects
@@ -586,46 +588,55 @@ let GenerateDependenciesForTargets(targets : ProjectTypes.MsbuildTarget List, pl
         let includeSolutionsSet = (plotHeaderDependencFilter.Split([|';'; '\n'; ' '|], StringSplitOptions.RemoveEmptyEntries) |> Set.ofSeq)
 
         for target in targets do
-            for solution in target.Children do
-                if includeSolutionsSet.IsEmpty || includeSolutionsSet.Contains(solution.Key) then
+            for solutionMain in target.Children do
+                if includeSolutionsSet.IsEmpty || includeSolutionsSet.Contains(solutionMain.Key) then
             
-                    let data = solution
-                    for project in solution.Value.Projects do
+                    let data = solutionMain
+                    for project in solutionMain.Value.Projects do
                 
                         for directory in project.Value.DepedentIncludeDirectories do
 
                             let directoryAbs = Path.GetFullPath(directory).ToLower().Replace("\\", "/")
 
                             if not(ignoreSet.Contains(directoryAbs)) then
-                                let projectOption = FindDependencyInSolution(directoryAbs, solution.Value)
+                                let projectOption = FindDependencyInSolution(directoryAbs, solutionMain.Value)
 
                                 match projectOption with
                                 | Some (guid, projectFound) ->  
-                                        if not(guid.Equals(project.Value.Guid)) && plotHeaderDependencyInsideProject then
-                                            if not(project.Value.HeaderReferences.ContainsKey(guid)) then
+                                        if not(guid.Equals(project.Value.Guid))
+                                            && plotHeaderDependencyInsideProject 
+                                            && not(project.Value.HeaderReferences.ContainsKey(guid)) then
                                                 project.Value.HeaderReferences.Add(guid, projectFound)
                                                 project.Value.Visible <- true
-                                | _  -> 
-                                    try
-                                        for target2 in targets do
-                                            for solution2 in target2.Children do
-                                                if not(solution2.Key.Equals(solution.Key)) then
-                                                    let projectOption = FindDependencyInSolution(directoryAbs, solution2.Value)
-                                                    match projectOption with
-                                                    | Some (guid, projectFound) ->  
-                                                            if not(guid.Equals(project.Value.Guid)) then
-                                                                project.Value.HeaderReferences.Add(guid, projectFound)
-                                                                project.Value.Visible <- true
-                                                                raise(ProjectTypes.FoundElementException("found"))
-                                                    | _  -> ()
-                                    with
-                                    | ex -> ()
+                                | _  ->
+
+                                    let ProcessChildren(key:string, solutionIn:ProjectTypes.Solution) =
+                                        let mutable returnValue = false
+                                        if not(key.Equals(solutionMain.Key)) then
+                                            let projectOption = FindDependencyInSolution(directoryAbs, solutionIn)
+
+                                            match projectOption with
+                                            | Some (guid, projectFound) ->  
+                                                    if not(guid.Equals(project.Value.Guid))
+                                                        && not(project.Value.HeaderReferences.ContainsKey(guid)) then
+                                                            project.Value.HeaderReferences.Add(guid, projectFound)
+                                                            project.Value.Visible <- true
+                                                            returnValue <- true
+                                            | _  -> ()
+
+                                        returnValue
+
+                                    let ProcessTarget(target:ProjectTypes.MsbuildTarget) =
+                                        target.Children
+                                            |> Seq.tryFind(fun child -> ProcessChildren(child.Key, child.Value))
+
+                                    targets
+                                        |> Seq.tryFind(fun target -> ProcessTarget(target).IsSome) |> ignore
 
 
 let CreateTargetTree(path : string, target : string,
                      nugetPackageBase : string, 
                      nugetIgnorePackages : string,
-                     checkRedundantIncludes : bool,
                      plotHeaderDependency : bool,
                      ignoreIncludeFolders : string,
                      plotHeaderDependencFilter : string,
@@ -635,13 +646,16 @@ let CreateTargetTree(path : string, target : string,
     let data = msbuildproject.Targets.[target]
 
     // collect pre processing information
-    HandleTarget(data, msbuildproject, target, &targets, nugetPackageBase, nugetIgnorePackages, checkRedundantIncludes) |> ignore
+    HandleTarget(data, msbuildproject, target, &targets, nugetPackageBase, nugetIgnorePackages, plotHeaderDependency) |> ignore
 
     // generate build deps between existing solutions
     GenerateExternalBuildDependenciesForSolutions(targets)
 
     // generate build deps between existing targets
     GenerateDependenciesForTargets(targets, plotHeaderDependency, ignoreIncludeFolders, plotHeaderDependencFilter, plotHeaderDependencyInsideProject)
+
+    ProjectCollection.GlobalProjectCollection.UnloadProject(msbuildproject)
+
     targets
 
 let GetProjectFilePathForFile(projectPath : string, fileName : string) =
