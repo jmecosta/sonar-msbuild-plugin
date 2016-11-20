@@ -151,76 +151,75 @@ let PopulateLinkLibsDepedencies(item : ProjectItemDefinition, project : ProjectT
                 item.EvaluatedValue.Split(';') |> Seq.iter (fun c -> AddDepFile(c.Trim()))
         )
 
+// create builds information for project, include paths and additional options
+// it also follows includes to find cyclic dependencies
+let GenerateBuildCppBuildInformation(additionalIncludeDirectories : byref<Set<string>>,
+                                     includes : byref<Set<string>>, 
+                                     item : ProjectItem,
+                                     projectToProcess : ProjectTypes.Project,
+                                     packagesBase : string,
+                                     detectCycles : bool) = 
 
+    let projectPath = Path.GetFullPath(Path.GetDirectoryName(projectToProcess.Path)).ToString()
+    let pathEvaluateInclude = 
+        if Path.IsPathRooted(item.EvaluatedInclude) then
+            item.EvaluatedInclude
+        else
+            Path.Combine(projectPath, item.EvaluatedInclude)
 
-
-let PopulateHeaderMatrix(additionalIncludeDirectories : byref<Set<string>>, includes : byref<Set<string>>, item : ProjectItem, project : ProjectTypes.Project, packagesBase : string) = 
-    if item.ItemType.Equals("ClCompile") then
-        let projectPath = Path.GetFullPath(Path.GetDirectoryName(project.Path)).ToString()
-        let path = 
-            if Path.IsPathRooted(item.EvaluatedInclude) then
-                item.EvaluatedInclude
-            else
-                Path.Combine(projectPath, item.EvaluatedInclude)
-
-        let metadataelems = Seq.toList item.Metadata |> List.tryFind (fun c -> c.Name.Equals("AdditionalIncludeDirectories"))
-
-        match metadataelems with
-        | Some value -> 
-            let includeDirs = value.EvaluatedValue.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
-            for path in includeDirs do
-                let dir = path.ToLower().Replace("\\", "/")
-                if not(dir.Contains(packagesBase)) then
-                    if not(additionalIncludeDirectories.Contains(path)) then
-                        if Path.IsPathRooted(path) then
-                            additionalIncludeDirectories <- additionalIncludeDirectories.Add(path)
-                        else
-                            let basePath = Directory.GetParent(project.Path).ToString()
-                            additionalIncludeDirectories <- additionalIncludeDirectories.Add(Path.GetFullPath(Path.Combine(basePath, path)))
-                    if not(project.DepedentIncludeDirectories.Contains(path)) then
-                        project.DepedentIncludeDirectories.Add(path) |> ignore
-        | _ -> ()
-
+    // add project path to include folders
+    if not(projectToProcess.AdditionalIncludeDirectories.Contains(projectPath)) then
+        projectToProcess.AdditionalIncludeDirectories.Add(projectPath) |> ignore
+    if not(additionalIncludeDirectories.Contains(projectPath)) then
         additionalIncludeDirectories <- additionalIncludeDirectories.Add(projectPath)
+
+    // process additional include dirs
+    let metadataelems = Seq.toList item.Metadata |> List.tryFind (fun c -> c.Name.Equals("AdditionalIncludeDirectories"))
+
+    match metadataelems with
+    | Some value -> 
+        let includeDirs = value.EvaluatedValue.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
+        for path in includeDirs do
+            let dir = path.ToLower().Replace("\\", "/")
+            if (String.IsNullOrEmpty(packagesBase) || not(dir.Contains(packagesBase))) && not(additionalIncludeDirectories.Contains(path)) then
+                if Path.IsPathRooted(path) then
+                    additionalIncludeDirectories <- additionalIncludeDirectories.Add(path)
+                else
+                    let basePath = Directory.GetParent(projectToProcess.Path).ToString()
+                    additionalIncludeDirectories <- additionalIncludeDirectories.Add(Path.GetFullPath(Path.Combine(basePath, path)))
+
+                if not(projectToProcess.AdditionalIncludeDirectories.Contains(path)) then
+                    projectToProcess.AdditionalIncludeDirectories.Add(path) |> ignore
+    | _ -> ()
+
+    // detect cyclic headers
+    if detectCycles then
         let dirs = (Seq.toList additionalIncludeDirectories)
-        for fileinclude in Helpers.GetIncludePathsForFile(path, dirs, project.Path) do
-                if not(includes.Contains(fileinclude)) then
-                    includes <- includes.Add(fileinclude)
+        for fileinclude in Helpers.GetIncludePathsForFile(pathEvaluateInclude, dirs, projectToProcess.Path) do
+            if not(includes.Contains(fileinclude)) then
+                includes <- includes.Add(fileinclude)
 
+    // retrieve additional options for compilation
+    let metadataelems = Seq.toList item.Metadata |> List.tryFind (fun c -> c.Name.Equals("AdditionalOptions"))
 
+    match metadataelems with
+    | Some value -> 
+        let additionalOptions = value.EvaluatedValue.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
+        for option in additionalOptions do
+            if not(projectToProcess.AdditionalOptions.Contains(option)) then
+                projectToProcess.AdditionalOptions.Add(option) |> ignore
+    | _ -> ()
 
+    // retrive defines
+    let metadataelems = Seq.toList item.Metadata |> List.tryFind (fun c -> c.Name.Equals("PreprocessorDefinitions"))
 
-let PopulateHeaders(additionalIncludeDirectories : byref<Set<string>>, includes : byref<Set<string>>, item : ProjectItem, projectPath : string) = 
-    if item.ItemType.Equals("ClCompile")  ||  item.ItemType.Equals("ClInclude")  then
-
-        let projectPathDir = Path.GetFullPath(Path.GetDirectoryName(projectPath)).ToString()
-        let path = 
-            if Path.IsPathRooted(item.EvaluatedInclude) then
-                item.EvaluatedInclude
-            else
-                Path.Combine(projectPathDir, item.EvaluatedInclude)
-
-        // get all additional includes
-        let metadataelems = Seq.toList item.Metadata
-        match metadataelems |> List.tryFind (fun c -> c.Name.Equals("AdditionalIncludeDirectories")) with
-        | Some value ->
-            let includeDirs = value.EvaluatedValue.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
-            for path in includeDirs do
-                if not(additionalIncludeDirectories.Contains(path)) then
-                    if Path.IsPathRooted(path) then
-                        additionalIncludeDirectories <- additionalIncludeDirectories.Add(path)
-                    else
-                        let basePath = Directory.GetParent(projectPath).ToString()
-                        additionalIncludeDirectories <- additionalIncludeDirectories.Add(Path.GetFullPath(Path.Combine(basePath, path)))
-        | _ -> ()
-
-        additionalIncludeDirectories <- additionalIncludeDirectories.Add(projectPath)
-        let dirs = (Seq.toList additionalIncludeDirectories)
-        for fileinclude in Helpers.GetIncludePathsForFile(path, dirs, projectPath) do
-                if not(includes.Contains(fileinclude)) then
-                    includes <- includes.Add(fileinclude)
-
-
+    match metadataelems with
+    | Some value -> 
+        let defines = value.EvaluatedValue.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
+        for define in defines do
+            if not(projectToProcess.Defines.Contains(define)) then
+                projectToProcess.Defines.Add(define) |> ignore
+    | _ -> ()
 
 let PopulateProjectReferences(item : ProjectItem, project : ProjectTypes.Project, solution : ProjectTypes.Solution) =
     if item.ItemType.Equals("ProjectReference") then
@@ -279,7 +278,12 @@ let CheckAdditionalIncludeDirectories(additionalIncludeDirectories : Set<string>
 let mutable additionalIncludeDirectories : Set<string> = Set.empty
 let mutable includes : Set<string> = Set.empty
 
-let HandleCppProjecItems(projectEvaluated : Project, project : ProjectTypes.Project, solution : ProjectTypes.Solution, packagesBase : string, processIncludes : bool) = 
+let HandleCppProjecItems(projectEvaluated : Project,
+                         project : ProjectTypes.Project,
+                         solution : ProjectTypes.Solution,
+                         packagesBase : string,
+                         processIncludes : bool,
+                         detectHeaderCycles : bool) = 
     additionalIncludeDirectories <- Set.empty
     includes <- Set.empty
 
@@ -287,8 +291,8 @@ let HandleCppProjecItems(projectEvaluated : Project, project : ProjectTypes.Proj
         |> List.ofSeq
         |> Array.ofList
         |> Array.iter (fun item ->
-            if processIncludes then
-                PopulateHeaderMatrix(&additionalIncludeDirectories, &includes, item, project, packagesBase)
+            if processIncludes && item.ItemType.Equals("ClCompile") then
+                GenerateBuildCppBuildInformation(&additionalIncludeDirectories, &includes, item, project, packagesBase, detectHeaderCycles)
             PopulateProjectReferences(item, project, solution))
 
     projectEvaluated.ItemDefinitions
@@ -302,7 +306,13 @@ let HandleCppProjecItems(projectEvaluated : Project, project : ProjectTypes.Proj
 
 // collects data from msbuild
 // does some static checking in data
-let PreprocessDataInProjects(ignoredPackages : Set<string>, packagesBasePath : string, processIncludes : bool, solutionPath : string) =
+let PreProcessSolution(nugetIgnorePackages : string,
+                       packagesBasePath : string,
+                       solutionPath : string,
+                       processIncludes : bool,
+                       detectHeaderCycles : bool) =
+
+    let ignoredPackages = (nugetIgnorePackages.Split([|';'; '\n'; ' '|], StringSplitOptions.RemoveEmptyEntries) |> Set.ofSeq)
 
     let solution = CreateSolutionData(solutionPath)
 
@@ -325,6 +335,57 @@ let PreprocessDataInProjects(ignoredPackages : Set<string>, packagesBasePath : s
                     project.Value.CLRSupport <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("CLRSupport"))) with | Some value -> value.EvaluatedValue | _ -> ""
                     project.Value.TargetPath <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("TargetPath"))) with | Some value -> value.EvaluatedValue | _ -> ""
 
+                    project.Value.PlatformToolset <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("PlatformToolset"))) with | Some value -> value.EvaluatedValue | _ -> "v120"
+                    project.Value.Platform <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("Platform"))) with | Some value -> value.EvaluatedValue | _ -> "Win32"
+
+                    // figure out a way of getting those
+                    // WindowsSDK_IncludePath
+                    // VC_IncludePath
+                    if project.Value.PlatformToolset.Equals("v120") then
+
+                        if File.Exists("C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\atlmfc\include") then
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include")  |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\atlmfc\include")  |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Windows Kits\8.1\Include\um") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Windows Kits\8.1\Include\shared") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Windows Kits\8.1\Include\winrt") |> ignore
+                        else
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Microsoft Visual Studio 12.0\VC\include") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Microsoft Visual Studio 12.0\VC\atlmfc\include") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\um") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\shared") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\winrt") |> ignore
+
+                    elif project.Value.PlatformToolset.Equals("v140") then
+
+                        if File.Exists("C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\atlmfc\include") then
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\atlmfc\include") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Windows Kits\8.1\Include\um") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Windows Kits\8.1\Include\shared") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Windows Kits\8.1\Include\winrt") |> ignore
+                        else
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Microsoft Visual Studio 14.0\VC\include") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Microsoft Visual Studio 14.0\VC\atlmfc\include") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\um") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\shared") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\winrt") |> ignore
+
+                    elif project.Value.PlatformToolset.Equals("v150") then
+                        if File.Exists("C:\Program Files (x86)\Microsoft Visual Studio 15.0\VC\atlmfc\include") then
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Microsoft Visual Studio 15.0\VC\include") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Microsoft Visual Studio 15.0\VC\atlmfc\include") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Windows Kits\8.1\Include\um") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Windows Kits\8.1\Include\shared") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Windows Kits\8.1\Include\winrt") |> ignore
+                        else
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Microsoft Visual Studio 15.0\VC\include") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Microsoft Visual Studio 15.0\VC\atlmfc\include") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\um") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\shared") |> ignore
+                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\winrt") |> ignore
+
+
                     if not(Path.GetFileNameWithoutExtension(project.Value.Path).ToLower().Equals(project.Value.Name.ToLower())) then
                         raise(ProjectTypes.IncorrectNameForProject("Post Project Incorrectly Named"))
 
@@ -338,13 +399,14 @@ let PreprocessDataInProjects(ignoredPackages : Set<string>, packagesBasePath : s
                                 match isFound with
                                 | Some c -> ()
                                 | _ ->
-                                    if not(project.Value.NugetReferences.Contains(packageId)) then  
+                                    if not(project.Value.NugetReferences.Contains(packageId)) then
+                                        
                                         project.Value.NugetReferences <- project.Value.NugetReferences.Add(packageId)
                                         project.Value.Visible <- true
                             with
                             | ex -> ()
 
-                    HandleCppProjecItems(msbuildproject, project.Value, solution, packagesBasePath, processIncludes)
+                    HandleCppProjecItems(msbuildproject, project.Value, solution, packagesBasePath, processIncludes, detectHeaderCycles)
 
                     ProjectCollection.GlobalProjectCollection.UnloadProject(msbuildproject)
 
@@ -378,8 +440,7 @@ let rec HandleTarget(projectInstance : ProjectTargetInstance,
     let ProcessProjectForDeps(projectSolution:string) = 
         if projectSolution.ToLower().EndsWith(".sln") then
             printf "Handle Solution : %A\n" projectSolution
-            let nugetExclusions = (nugetIgnorePackages.Split([|';'; '\n'; ' '|], StringSplitOptions.RemoveEmptyEntries) |> Set.ofSeq)
-            let solutionData = PreprocessDataInProjects(nugetExclusions, nugetPackageBase, processIncludes, projectSolution)
+            let solutionData = PreProcessSolution(nugetIgnorePackages, nugetPackageBase, projectSolution, processIncludes, true)
             if not(newTarget.Children.ContainsKey(solutionData.Name)) then
                 childSolutionsFound <- childSolutionsFound @ [solutionData]
                 newTarget.Children <- newTarget.Children.Add(solutionData.Name, solutionData)
@@ -474,7 +535,7 @@ let GenerateHeaderDependencies(solutionList : ProjectTypes.Solution List,
         for solution in solutionList do
             if includeSolutionsSet.IsEmpty || includeSolutionsSet.Contains(solution.Name) then
                 for project in solution.Projects do
-                    for directory in project.Value.DepedentIncludeDirectories do
+                    for directory in project.Value.AdditionalIncludeDirectories do
                         let directoryAbs = Path.GetFullPath(directory).ToLower().Replace("\\", "/")
 
                         if not(ignoreSet.Contains(directoryAbs)) then
@@ -550,7 +611,7 @@ let GenerateExternalBuildDependenciesForSolutions(targets : ProjectTypes.Msbuild
             |> Array.iter (fun b ->
                 b.Value.DepedentLibs |> Seq.iter (fun c ->
                     (if not(listOfLibsLink.Contains(c)) then listOfLibsLink <- listOfLibsLink.Add(c)))
-                b.Value.DepedentIncludeDirectories |> Seq.iter (fun c ->
+                b.Value.AdditionalIncludeDirectories |> Seq.iter (fun c ->
                     (if not(allowedSearchFolders.Contains(c)) then allowedSearchFolders <- allowedSearchFolders.Add(c))))
 
         listOfLibsLink
@@ -594,7 +655,7 @@ let GenerateDependenciesForTargets(targets : ProjectTypes.MsbuildTarget List, pl
                     let data = solutionMain
                     for project in solutionMain.Value.Projects do
                 
-                        for directory in project.Value.DepedentIncludeDirectories do
+                        for directory in project.Value.AdditionalIncludeDirectories do
 
                             let directoryAbs = Path.GetFullPath(directory).ToLower().Replace("\\", "/")
 

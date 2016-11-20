@@ -28,11 +28,17 @@ type Project() =
     member val ImportLib : string = "" with get, set
     member val CLRSupport : string = "" with get, set
     member val TargetPath : string = "" with get, set
+    member val PlatformToolset : string = "" with get, set
+    member val Platform : string = "" with get, set
+
 
     member val SolutionInternalBuildDepencies :  System.Collections.Generic.Dictionary<Guid, Project>  = new System.Collections.Generic.Dictionary<Guid, Project>() with get, set
     member val ProjectReferences :  System.Collections.Generic.Dictionary<Guid, Project>  = new System.Collections.Generic.Dictionary<Guid, Project>() with get, set
     member val HeaderReferences : System.Collections.Generic.Dictionary<Guid, Project>  = new System.Collections.Generic.Dictionary<Guid, Project>() with get, set
-    member val DepedentIncludeDirectories : System.Collections.Generic.HashSet<string> = new System.Collections.Generic.HashSet<string>() with get, set
+    member val Defines : System.Collections.Generic.HashSet<string> = new System.Collections.Generic.HashSet<string>() with get, set
+    member val AdditionalOptions : System.Collections.Generic.HashSet<string> = new System.Collections.Generic.HashSet<string>() with get, set
+    member val AdditionalIncludeDirectories : System.Collections.Generic.HashSet<string> = new System.Collections.Generic.HashSet<string>() with get, set
+    member val SystemIncludeDirs : System.Collections.Generic.HashSet<string> = new System.Collections.Generic.HashSet<string>() with get, set
     member val DepedentLibDirectories : System.Collections.Generic.HashSet<string> = new System.Collections.Generic.HashSet<string>() with get, set
     member val DepedentLibs : System.Collections.Generic.HashSet<string> = new System.Collections.Generic.HashSet<string>() with get, set
     member val AssemblyReferences : System.Collections.Generic.Dictionary<Guid, AssemblyRef>  = new System.Collections.Generic.Dictionary<Guid, AssemblyRef>() with get, set

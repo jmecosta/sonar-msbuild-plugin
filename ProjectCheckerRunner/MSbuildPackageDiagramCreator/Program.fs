@@ -36,8 +36,7 @@ let main argv =
         if arguments.ContainsKey("s") then
             let file = arguments.["s"] |> Seq.head
             if file.ToLower().EndsWith(".sln") then
-                let exclusions = (config.IgnoreNugetPackages.Split([|';'; '\n'; ' '|], StringSplitOptions.RemoveEmptyEntries) |> Set.ofSeq)
-                let solution = MSBuildHelper.PreprocessDataInProjects(exclusions, config.PackageBasePath, config.CheckRedundantIncludes, file)
+                let solution = MSBuildHelper.PreProcessSolution(config.IgnoreNugetPackages, config.PackageBasePath, file, config.CheckRedundantIncludes, true)
                 solutionList <- solutionList @ [solution]
                 MSBuildHelper.GenerateHeaderDependencies(solutionList, config.PlotHeaderDependency, config.IgnoreIncludeFolders, config.PlotHeaderDependencFilter, config.PlotHeaderDependencyInsideProject)
 
@@ -65,13 +64,12 @@ let main argv =
             let supportedExtensions = Set.ofList [".sln"]
             let directory = arguments.["d"] |> Seq.head
             for file in  Directory.EnumerateFiles(directory, "*.*", SearchOption.AllDirectories) do
-                let extension = Path.GetExtension(file).ToLower()                
+                let extension = Path.GetExtension(file).ToLower()
                 if supportedExtensions.Contains(extension) then 
                     let includeSolutionsSet = (config.PlotSolutionNodeFilter.Split([|';'; '\n'; ' '|], StringSplitOptions.RemoveEmptyEntries) |> Set.ofSeq)
 
                     if includeSolutionsSet.IsEmpty then
-                        let nugetExclusions = (config.IgnoreNugetPackages.Split([|';'; '\n'; ' '|], StringSplitOptions.RemoveEmptyEntries) |> Set.ofSeq)
-                        let solution = MSBuildHelper.PreprocessDataInProjects(nugetExclusions, config.PackageBasePath, config.CheckRedundantIncludes, file)
+                        let solution = MSBuildHelper.PreProcessSolution(config.IgnoreNugetPackages, config.PackageBasePath, file, config.CheckRedundantIncludes, true)
                         if not(includeSolutionsSet.Contains(solution.Name)) then
                             solutionList <- solutionList @ [solution]
                             MSBuildHelper.GenerateHeaderDependencies(solutionList, config.PlotHeaderDependency, config.IgnoreIncludeFolders, config.PlotHeaderDependencFilter, config.PlotHeaderDependencyInsideProject)

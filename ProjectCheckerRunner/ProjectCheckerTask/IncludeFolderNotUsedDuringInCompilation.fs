@@ -28,8 +28,11 @@ type IncludeFolderNotUsedDuringInCompilation() =
             includes <- Set.empty
 
             for item in project.Items do
-                try            
-                    PopulateHeaders(&additionalIncludeDirectories, &includes, item, path)
+                try
+                    if item.ItemType.Equals("ClCompile")  ||  item.ItemType.Equals("ClInclude")  then
+                        let project = new ProjectTypes.Project()
+                        project.Path <- path
+                        GenerateBuildCppBuildInformation(&additionalIncludeDirectories, &includes, item, project, "", false)
                 with
                 | ex -> this.SaveIssue(path, 1, "Include Not Found in Disk " + item.EvaluatedInclude + " can be removed, its not used", IncludeFileNotFound)
 
