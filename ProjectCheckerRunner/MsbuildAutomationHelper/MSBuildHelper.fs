@@ -371,7 +371,7 @@ let PreProcessSolution(nugetIgnorePackages : string,
                             project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\shared") |> ignore
                             project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\winrt") |> ignore
 
-                    elif project.Value.PlatformToolset.Equals("v150") then
+                    elif project.Value.PlatformToolset.Equals("V141") then
                         if File.Exists("C:\Program Files (x86)\Microsoft Visual Studio 15.0\VC\atlmfc\include") then
                             project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Microsoft Visual Studio 15.0\VC\include") |> ignore
                             project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Microsoft Visual Studio 15.0\VC\atlmfc\include") |> ignore
