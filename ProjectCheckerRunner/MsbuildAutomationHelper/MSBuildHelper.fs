@@ -4,6 +4,7 @@ open System
 open System.IO
 
 open System.Text
+open System.Text.RegularExpressions
 open Microsoft.Build.Execution
 open Microsoft.Build.Evaluation
 
@@ -178,10 +179,10 @@ let GenerateBuildCppBuildInformation(additionalIncludeDirectories : byref<Set<st
 
     match metadataelems with
     | Some value -> 
-        let includeDirs = value.EvaluatedValue.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
-        for path in includeDirs do
-            let dir = path.ToLower().Replace("\\", "/")
-            if (String.IsNullOrEmpty(packagesBase) || not(dir.Contains(packagesBase))) && not(additionalIncludeDirectories.Contains(path)) then
+        let includeDirs = value.EvaluatedValue.Split([|';'; '\n'; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
+        for dir in includeDirs do
+            let path = dir.Trim().ToLower().Replace("\\", "/")
+            if not(path.Equals("")) && (String.IsNullOrEmpty(packagesBase) || not(path.Contains(packagesBase))) && not(additionalIncludeDirectories.Contains(path)) then
                 if Path.IsPathRooted(path) then
                     additionalIncludeDirectories <- additionalIncludeDirectories.Add(path)
                 else
@@ -205,8 +206,9 @@ let GenerateBuildCppBuildInformation(additionalIncludeDirectories : byref<Set<st
     match metadataelems with
     | Some value -> 
         let additionalOptions = value.EvaluatedValue.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
-        for option in additionalOptions do
-            if not(projectToProcess.AdditionalOptions.Contains(option)) then
+        for trimmedData in additionalOptions do
+            let option = trimmedData.Trim()
+            if not(option.Equals("")) && not(projectToProcess.AdditionalOptions.Contains(option)) then
                 projectToProcess.AdditionalOptions.Add(option) |> ignore
     | _ -> ()
 
@@ -215,7 +217,7 @@ let GenerateBuildCppBuildInformation(additionalIncludeDirectories : byref<Set<st
 
     match metadataelems with
     | Some value -> 
-        let defines = value.EvaluatedValue.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
+        let defines = value.EvaluatedValue.Split([|';'; '\n'; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
         for define in defines do
             if not(projectToProcess.Defines.Contains(define)) then
                 projectToProcess.Defines.Add(define) |> ignore
@@ -310,7 +312,8 @@ let PreProcessSolution(nugetIgnorePackages : string,
                        packagesBasePath : string,
                        solutionPath : string,
                        processIncludes : bool,
-                       detectHeaderCycles : bool) =
+                       detectHeaderCycles : bool,
+                       toolsVersion : string) =
 
     let ignoredPackages = (nugetIgnorePackages.Split([|';'; '\n'; ' '|], StringSplitOptions.RemoveEmptyEntries) |> Set.ofSeq)
 
@@ -325,7 +328,13 @@ let PreProcessSolution(nugetIgnorePackages : string,
             try
                 if extension = ".vcxproj" then
                     printf "Handle %A \n" project.Value.Path
-                    let msbuildproject = new Microsoft.Build.Evaluation.Project(project.Value.Path)
+                    let msbuildproject =
+                        if toolsVersion.StartsWith("14.0") || toolsVersion.StartsWith("15.0") then
+                            new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "14.0")
+                        elif toolsVersion.StartsWith("12.0") then
+                            new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "12.0")
+                        else
+                            new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "4.0")
 
                     project.Value.Name <- (msbuildproject.Properties |> Seq.find (fun c -> c.Name.Equals("RootNamespace"))).EvaluatedValue
                     project.Value.ImportLib <- match (msbuildproject.AllEvaluatedItemDefinitionMetadata |> Seq.tryFind (fun c -> c.Name.Equals("ImportLibrary"))) with | Some value -> value.EvaluatedValue | _ -> ""
@@ -338,53 +347,20 @@ let PreProcessSolution(nugetIgnorePackages : string,
                     project.Value.PlatformToolset <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("PlatformToolset"))) with | Some value -> value.EvaluatedValue | _ -> "v120"
                     project.Value.Platform <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("Platform"))) with | Some value -> value.EvaluatedValue | _ -> "Win32"
 
+                    let VC_IncludePath = match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("VC_IncludePath"))) with | Some value -> value.EvaluatedValue | _ -> ""
+                    let WindowsSDK_IncludePath = match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("WindowsSDK_IncludePath"))) with | Some value -> value.EvaluatedValue | _ -> ""
+
                     // figure out a way of getting those
                     // WindowsSDK_IncludePath
                     // VC_IncludePath
-                    if project.Value.PlatformToolset.Equals("v120") then
 
-                        if File.Exists("C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\atlmfc\include") then
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\include")  |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\atlmfc\include")  |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Windows Kits\8.1\Include\um") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Windows Kits\8.1\Include\shared") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Windows Kits\8.1\Include\winrt") |> ignore
-                        else
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Microsoft Visual Studio 12.0\VC\include") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Microsoft Visual Studio 12.0\VC\atlmfc\include") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\um") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\shared") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\winrt") |> ignore
+                    for includeData in VC_IncludePath.Split([|';'; '\n'; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries) do
+                        if not(project.Value.SystemIncludeDirs.Contains(includeData)) then
+                            project.Value.SystemIncludeDirs.Add(includeData) |> ignore
 
-                    elif project.Value.PlatformToolset.Equals("v140") then
-
-                        if File.Exists("C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\atlmfc\include") then
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\include") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\atlmfc\include") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Windows Kits\8.1\Include\um") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Windows Kits\8.1\Include\shared") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Windows Kits\8.1\Include\winrt") |> ignore
-                        else
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Microsoft Visual Studio 14.0\VC\include") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Microsoft Visual Studio 14.0\VC\atlmfc\include") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\um") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\shared") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\winrt") |> ignore
-
-                    elif project.Value.PlatformToolset.Equals("V141") then
-                        if File.Exists("C:\Program Files (x86)\Microsoft Visual Studio 15.0\VC\atlmfc\include") then
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Microsoft Visual Studio 15.0\VC\include") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Microsoft Visual Studio 15.0\VC\atlmfc\include") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Windows Kits\8.1\Include\um") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Windows Kits\8.1\Include\shared") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files (x86)\Windows Kits\8.1\Include\winrt") |> ignore
-                        else
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Microsoft Visual Studio 15.0\VC\include") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Microsoft Visual Studio 15.0\VC\atlmfc\include") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\um") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\shared") |> ignore
-                            project.Value.SystemIncludeDirs.Add("C:\Program Files\Windows Kits\8.1\Include\winrt") |> ignore
-
+                    for includeData in WindowsSDK_IncludePath.Split([|';'; '\n'; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries) do
+                        if not(project.Value.SystemIncludeDirs.Contains(includeData)) then
+                            project.Value.SystemIncludeDirs.Add(includeData) |> ignore
 
                     if not(Path.GetFileNameWithoutExtension(project.Value.Path).ToLower().Equals(project.Value.Name.ToLower())) then
                         raise(ProjectTypes.IncorrectNameForProject("Post Project Incorrectly Named"))
@@ -428,7 +404,8 @@ let rec HandleTarget(projectInstance : ProjectTargetInstance,
                      targets : byref<ProjectTypes.MsbuildTarget List>,
                      nugetPackageBase : string,
                      nugetIgnorePackages : string,
-                     processIncludes : bool) =
+                     processIncludes : bool,
+                     toolsVersion : string) =
     
     let targetdata = msbuildproject.Targets.[target]
     let newTarget = new ProjectTypes.MsbuildTarget()
@@ -440,7 +417,7 @@ let rec HandleTarget(projectInstance : ProjectTargetInstance,
     let ProcessProjectForDeps(projectSolution:string) = 
         if projectSolution.ToLower().EndsWith(".sln") then
             printf "Handle Solution : %A\n" projectSolution
-            let solutionData = PreProcessSolution(nugetIgnorePackages, nugetPackageBase, projectSolution, processIncludes, true)
+            let solutionData = PreProcessSolution(nugetIgnorePackages, nugetPackageBase, projectSolution, processIncludes, true, toolsVersion)
             if not(newTarget.Children.ContainsKey(solutionData.Name)) then
                 childSolutionsFound <- childSolutionsFound @ [solutionData]
                 newTarget.Children <- newTarget.Children.Add(solutionData.Name, solutionData)
@@ -506,7 +483,7 @@ let rec HandleTarget(projectInstance : ProjectTargetInstance,
     for dep in projectInstance.DependsOnTargets.Split([|';'; '\n'; ' '; '\r'|], StringSplitOptions.RemoveEmptyEntries) do
         if dep <> "" then
             let data = msbuildproject.Targets.[dep]
-            let name, depTarget = HandleTarget(data, msbuildproject, dep, &targets, nugetPackageBase, nugetIgnorePackages, processIncludes)
+            let name, depTarget = HandleTarget(data, msbuildproject, dep, &targets, nugetPackageBase, nugetIgnorePackages, processIncludes, toolsVersion)
             newTarget.MsbuildTargetDependencies <- newTarget.MsbuildTargetDependencies.Add(name, depTarget)
     
     targets <- targets @ [newTarget]
@@ -701,13 +678,14 @@ let CreateTargetTree(path : string, target : string,
                      plotHeaderDependency : bool,
                      ignoreIncludeFolders : string,
                      plotHeaderDependencFilter : string,
-                     plotHeaderDependencyInsideProject : bool) = 
+                     plotHeaderDependencyInsideProject : bool,
+                     toolsVersion : string) = 
     let mutable targets : ProjectTypes.MsbuildTarget List = List.Empty
     let msbuildproject = new Microsoft.Build.Evaluation.Project(path)
     let data = msbuildproject.Targets.[target]
 
     // collect pre processing information
-    HandleTarget(data, msbuildproject, target, &targets, nugetPackageBase, nugetIgnorePackages, plotHeaderDependency) |> ignore
+    HandleTarget(data, msbuildproject, target, &targets, nugetPackageBase, nugetIgnorePackages, plotHeaderDependency, toolsVersion) |> ignore
 
     // generate build deps between existing solutions
     GenerateExternalBuildDependenciesForSolutions(targets)
@@ -735,3 +713,53 @@ let GetProjectFilePathForFile(projectPath : string, fileName : string) =
     match element with
     | Some(c) -> c.EvaluatedInclude
     | _ -> ""
+
+
+
+let GetIncludeGraphForFile(pathInput : string, project : ProjectTypes.Project) =
+    let fileNameLower = Path.GetFileName(pathInput).ToLower()
+    Helpers.ClearWarnings()
+    let rec CheckFile(fileToCheck:string, stackFile:ProjectTypes.CallGraphFile, stackRecursive:Helpers.ImmutableStack<string>) = 
+
+        let CheckLine(line:string, originalFile:string, nodeIn:ProjectTypes.CallGraphFile) = 
+            let AddHeader(matchdata:Match) =
+                let fileFound = matchdata.Groups.[1].Value
+                let fileNameLowerOriginal = Path.GetFileName(originalFile).ToLower()
+                if fileNameLower = fileFound.ToLower()  || fileNameLowerOriginal = fileFound.ToLower() then
+                    let warning = sprintf "Recursive inclusion of same file : %s <=> %s" pathInput fileFound
+                    Helpers.AddWarning(pathInput, warning)
+                else
+                    let ignored = Helpers.ignoreHeaders |> List.tryFind(fun c -> fileFound.StartsWith(c + ".") || fileFound.StartsWith(c))
+                    match ignored with
+                    | Some data -> ()
+                    | _ ->
+
+                        let DataFound = project.AdditionalIncludeDirectories |> Seq.tryFind (fun c -> (File.Exists(Path.Combine(c, fileFound))))
+                        match DataFound with
+                        | Some data -> 
+                            let abspath = Path.GetFullPath(Path.Combine(data, fileFound))
+                            let nodeElem = new ProjectTypes.CallGraphFile(abspath)
+                            nodeIn.Node <- nodeIn.Node @ [nodeElem]
+
+                            let stackData = stackRecursive.All()
+                            let foundInStack = stackData |> Seq.tryFind(fun c -> c.Equals(abspath))
+                            match foundInStack with
+                            | Some value ->
+                                let warning = sprintf "Cyclic include headers : %A" (stackRecursive.Push abspath)
+                                Helpers.AddWarning(pathInput, warning)
+                            | _ -> 
+                                //printf "STACK %A \n" stackToCheck
+                                //printf "Recursion Follow %A from First Entry %A and Previous Entry %A\n" abspath pathInput originalFile
+                                CheckFile(abspath, nodeElem, stackRecursive.Push abspath)
+                        | _ -> ()
+
+            (Regex.Matches(line, "[ ]*\#include[ ]+[\"<]([^\"]*)[\">]"))
+                |> Seq.cast
+                |> Seq.iter (fun matchdata -> AddHeader matchdata)
+
+        File.ReadAllLines(fileToCheck) |> Array.iter (fun line -> CheckLine(line, fileToCheck, stackFile)) // parallel
+
+    let recursiveCallDep = Helpers.ImmutableStack.Empty.Push pathInput
+    let callStack = new ProjectTypes.CallGraphFile(pathInput)
+    CheckFile(pathInput, callStack, recursiveCallDep)
+    callStack

@@ -5,3 +5,4 @@ ProjectCheckerRunner/MSBuild
 *.coverage.xml
 ProjectCheckerRunner/BuildDrop/**
 ProjectCheckerRunner/buildlog*
+**/.vs/**

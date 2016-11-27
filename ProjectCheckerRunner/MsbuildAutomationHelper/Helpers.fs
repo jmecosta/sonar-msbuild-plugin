@@ -42,6 +42,9 @@ let mutable cacheOfHeaders = Map.empty
 let mutable directoryLookupCache = Map.empty
 let mutable warnings : Warning list = list.Empty
 
+let ClearWarnings() =
+    warnings <- List.Empty
+
 let AddWarning(path:string, data:string) =
     let warning = new Warning()
     warning.Data <- data
@@ -76,7 +79,6 @@ let FindFullPathFromAdditionalDirectories(file : string, mainPath : string) =
     directoryLookupCache |> Seq.tryFind (fun c -> (ValidateFileInFolder c.Value).IsSome)
 
 let EnumerateFilesInIncludeDir(additionalIncludeDirectories : string list, projectFile : string) = 
-    
     try
         let ProcessDir dir = 
             if not(directoryLookupCache.ContainsKey(dir)) then
@@ -90,8 +92,8 @@ let EnumerateFilesInIncludeDir(additionalIncludeDirectories : string list, proje
             |> Seq.toArray
             |> Array.Parallel.iter (fun dir -> ProcessDir dir)
     with
-    | ex -> printf "Failed to Enumerte Dirs node: %A %s %s\n" additionalIncludeDirectories ex.Message  ex.StackTrace
-    
+    | ex -> printf "Failed to enumerate Dirs node: %A %s %s\n" additionalIncludeDirectories ex.Message  ex.StackTrace
+
 
 // FSharp 4.3.1 compatibility
 let mutable headersData : string [] = Array.empty

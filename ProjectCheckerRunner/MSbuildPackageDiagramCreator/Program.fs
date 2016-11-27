@@ -15,14 +15,20 @@ let main argv =
     let executionFolder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", ""))
     let outputFile = 
         if arguments.ContainsKey("o")  then
-            (arguments.["o"] |> Seq.head) + ".dgml"            
+            (arguments.["o"] |> Seq.head) + ".dgml"
         else
             Path.Combine(Environment.CurrentDirectory, "packages.dgml")
 
 
     if arguments.ContainsKey("h")  then
         CommandLine.ShowHelp()
-    else        
+    else
+        let tooslVersion =
+            if arguments.ContainsKey("v")  then
+                (arguments.["v"] |> Seq.head)
+            else
+                "14.0"
+
         let config =
             if arguments.ContainsKey("i") then
                 let input = arguments.["i"] |> Seq.head
@@ -36,7 +42,7 @@ let main argv =
         if arguments.ContainsKey("s") then
             let file = arguments.["s"] |> Seq.head
             if file.ToLower().EndsWith(".sln") then
-                let solution = MSBuildHelper.PreProcessSolution(config.IgnoreNugetPackages, config.PackageBasePath, file, config.CheckRedundantIncludes, true)
+                let solution = MSBuildHelper.PreProcessSolution(config.IgnoreNugetPackages, config.PackageBasePath, file, config.CheckRedundantIncludes, true, tooslVersion)
                 solutionList <- solutionList @ [solution]
                 MSBuildHelper.GenerateHeaderDependencies(solutionList, config.PlotHeaderDependency, config.IgnoreIncludeFolders, config.PlotHeaderDependencFilter, config.PlotHeaderDependencyInsideProject)
 
@@ -54,7 +60,8 @@ let main argv =
                                                          config.PlotHeaderDependency,
                                                          config.IgnoreIncludeFolders,
                                                          config.PlotHeaderDependencFilter,
-                                                         config.PlotHeaderDependencyInsideProject)
+                                                         config.PlotHeaderDependencyInsideProject,
+                                                         tooslVersion)
 
             Helpers.warnings |> Seq.iter (fun c-> (printf "%s => %s\n" c.Path c.Data))
             DgmlHelper.WriteDgmlTargetDocument(outputFile, targets, config)
@@ -69,7 +76,7 @@ let main argv =
                     let includeSolutionsSet = (config.PlotSolutionNodeFilter.Split([|';'; '\n'; ' '|], StringSplitOptions.RemoveEmptyEntries) |> Set.ofSeq)
 
                     if includeSolutionsSet.IsEmpty then
-                        let solution = MSBuildHelper.PreProcessSolution(config.IgnoreNugetPackages, config.PackageBasePath, file, config.CheckRedundantIncludes, true)
+                        let solution = MSBuildHelper.PreProcessSolution(config.IgnoreNugetPackages, config.PackageBasePath, file, config.CheckRedundantIncludes, true, tooslVersion)
                         if not(includeSolutionsSet.Contains(solution.Name)) then
                             solutionList <- solutionList @ [solution]
                             MSBuildHelper.GenerateHeaderDependencies(solutionList, config.PlotHeaderDependency, config.IgnoreIncludeFolders, config.PlotHeaderDependencFilter, config.PlotHeaderDependencyInsideProject)

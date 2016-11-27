@@ -2,7 +2,7 @@
 <package>
     <metadata>
         <id>ProjectCheckerRunner</id>
-        <version>1.3.5</version>
+        <version>1.3.7</version>
         <authors>Jorge Costa</authors>
         <owners>jmecsoftware.com</owners>
         <licenseUrl>https://github.com/jmecsoftware/sonar-msbuild-plugin/blob/master/LICENSE</licenseUrl>

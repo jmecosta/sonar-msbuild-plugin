@@ -16,6 +16,7 @@ let ShowHelp () =
         Console.WriteLine ("    /M|/m:<msbuild file to parse>")
         Console.WriteLine ("    /T|/t:<target to use in msbuild>")
         Console.WriteLine ("    /D|/d:<directory>")
+        Console.WriteLine ("    /V|/v:<tools version : 4.0, 12.0, 14.0, 15.0>")
         Console.WriteLine ("    /H|/h <show help>")
 
 // parse command using regex

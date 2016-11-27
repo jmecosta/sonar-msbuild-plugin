@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.25914.0
+VisualStudioVersion = 15.0.25920.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ProjectCheckerTask", "ProjectCheckerTask\ProjectCheckerTask.fsproj", "{F02E14B7-F4CD-430F-9078-B3F06A67C404}"
 EndProject
@@ -13,8 +13,6 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MSbuildPackageDiagramCreato
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MsbuildAutomationHelper", "MsbuildAutomationHelper\MsbuildAutomationHelper.fsproj", "{49F98A4D-DA45-4E7A-8E37-70D62A036283}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MsbuildAutomationHelper.Test", "MsbuildAutomationHelper.Test\MsbuildAutomationHelper.Test.fsproj", "{F8CC7EF2-7B2D-4882-91FD-42928814EDD6}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C015577B-7995-4933-9193-5B4D7BA4E423}"
 	ProjectSection(SolutionItems) = preProject
 		nuget\MsbuildAutomationHelper431.nuspec = nuget\MsbuildAutomationHelper431.nuspec
@@ -23,6 +21,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		nuget\MSbuildPackageDiagramCreator.nuspec = nuget\MSbuildPackageDiagramCreator.nuspec
 		nuget\ProjectCheckerRunner.nuspec = nuget\ProjectCheckerRunner.nuspec
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MsbuildAutomationHelper.Test", "MsbuildAutomationHelper.Test\MsbuildAutomationHelper.Test.csproj", "{0FF92C27-5663-47D4-8B79-C808830108F8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -50,10 +50,10 @@ Global
 		{49F98A4D-DA45-4E7A-8E37-70D62A036283}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{49F98A4D-DA45-4E7A-8E37-70D62A036283}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{49F98A4D-DA45-4E7A-8E37-70D62A036283}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F8CC7EF2-7B2D-4882-91FD-42928814EDD6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F8CC7EF2-7B2D-4882-91FD-42928814EDD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F8CC7EF2-7B2D-4882-91FD-42928814EDD6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F8CC7EF2-7B2D-4882-91FD-42928814EDD6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0FF92C27-5663-47D4-8B79-C808830108F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0FF92C27-5663-47D4-8B79-C808830108F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0FF92C27-5663-47D4-8B79-C808830108F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0FF92C27-5663-47D4-8B79-C808830108F8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

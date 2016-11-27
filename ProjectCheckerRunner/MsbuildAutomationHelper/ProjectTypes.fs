@@ -87,6 +87,10 @@ type SonarResoureMetrics(path : string) =
     member val Issues : SonarIssue List = List.empty with get, set
 
 
+type CallGraphFile(path : string) =
+    member val Path : string = path with get
+    member val Node : CallGraphFile list = List.Empty with get, set
+
 type ProjType = XmlProvider<"""<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build" ToolsVersion="4.0">
   <ItemGroup Label="ProjectConfigurations">
