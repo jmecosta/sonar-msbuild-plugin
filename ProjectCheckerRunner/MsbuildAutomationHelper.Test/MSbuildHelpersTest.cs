@@ -9,7 +9,7 @@ namespace MSbuildHelpersTest
         readonly string executionFolder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", ""));
 
         [Test]
-        public void TestLoad()
+        public void GetsIncludeGraphs()
         {
             var pathSolution = Path.Combine(executionFolder, "TestData", "ConsoleApp");
             var solution = MSBuildHelper.PreProcessSolution("", "", Path.Combine(pathSolution, "ConsoleApp.sln"), true, false, "14.0");

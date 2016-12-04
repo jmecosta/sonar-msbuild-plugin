@@ -336,7 +336,6 @@ let PreProcessSolution(nugetIgnorePackages : string,
                         else
                             new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "4.0")
 
-                    project.Value.Name <- (msbuildproject.Properties |> Seq.find (fun c -> c.Name.Equals("RootNamespace"))).EvaluatedValue
                     project.Value.ImportLib <- match (msbuildproject.AllEvaluatedItemDefinitionMetadata |> Seq.tryFind (fun c -> c.Name.Equals("ImportLibrary"))) with | Some value -> value.EvaluatedValue | _ -> ""
 
                     project.Value.Keyword <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("Keyword"))) with | Some value -> value.EvaluatedValue | _ -> ""
@@ -480,7 +479,7 @@ let rec HandleTarget(projectInstance : ProjectTargetInstance,
             with | ex -> ())
 
     // handle dependencies
-    for dep in projectInstance.DependsOnTargets.Split([|';'; '\n'; ' '; '\r'|], StringSplitOptions.RemoveEmptyEntries) do
+    for dep in projectInstance.DependsOnTargets.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries) do
         if dep <> "" then
             let data = msbuildproject.Targets.[dep]
             let name, depTarget = HandleTarget(data, msbuildproject, dep, &targets, nugetPackageBase, nugetIgnorePackages, processIncludes, toolsVersion)
@@ -633,44 +632,48 @@ let GenerateDependenciesForTargets(targets : ProjectTypes.MsbuildTarget List, pl
                     for project in solutionMain.Value.Projects do
                 
                         for directory in project.Value.AdditionalIncludeDirectories do
+                            try
 
-                            let directoryAbs = Path.GetFullPath(directory).ToLower().Replace("\\", "/")
+                                let directoryAbs = Path.GetFullPath(directory).ToLower().Replace("\\", "/")
 
-                            if not(ignoreSet.Contains(directoryAbs)) then
-                                let projectOption = FindDependencyInSolution(directoryAbs, solutionMain.Value)
+                                if not(ignoreSet.Contains(directoryAbs)) then
+                                    let projectOption = FindDependencyInSolution(directoryAbs, solutionMain.Value)
 
-                                match projectOption with
-                                | Some (guid, projectFound) ->  
-                                        if not(guid.Equals(project.Value.Guid))
-                                            && plotHeaderDependencyInsideProject 
-                                            && not(project.Value.HeaderReferences.ContainsKey(guid)) then
-                                                project.Value.HeaderReferences.Add(guid, projectFound)
-                                                project.Value.Visible <- true
-                                | _  ->
+                                    match projectOption with
+                                    | Some (guid, projectFound) ->  
+                                            if not(guid.Equals(project.Value.Guid))
+                                                && plotHeaderDependencyInsideProject 
+                                                && not(project.Value.HeaderReferences.ContainsKey(guid)) then
+                                                    project.Value.HeaderReferences.Add(guid, projectFound)
+                                                    project.Value.Visible <- true
+                                    | _  ->
 
-                                    let ProcessChildren(key:string, solutionIn:ProjectTypes.Solution) =
-                                        let mutable returnValue = false
-                                        if not(key.Equals(solutionMain.Key)) then
-                                            let projectOption = FindDependencyInSolution(directoryAbs, solutionIn)
+                                        let ProcessChildren(key:string, solutionIn:ProjectTypes.Solution) =
+                                            let mutable returnValue = false
+                                            if not(key.Equals(solutionMain.Key)) then
+                                                let projectOption = FindDependencyInSolution(directoryAbs, solutionIn)
 
-                                            match projectOption with
-                                            | Some (guid, projectFound) ->  
-                                                    if not(guid.Equals(project.Value.Guid))
-                                                        && not(project.Value.HeaderReferences.ContainsKey(guid)) then
-                                                            project.Value.HeaderReferences.Add(guid, projectFound)
-                                                            project.Value.Visible <- true
-                                                            returnValue <- true
-                                            | _  -> ()
+                                                match projectOption with
+                                                | Some (guid, projectFound) ->  
+                                                        if not(guid.Equals(project.Value.Guid))
+                                                            && not(project.Value.HeaderReferences.ContainsKey(guid)) then
+                                                                project.Value.HeaderReferences.Add(guid, projectFound)
+                                                                project.Value.Visible <- true
+                                                                returnValue <- true
+                                                | _  -> ()
 
-                                        returnValue
+                                            returnValue
 
-                                    let ProcessTarget(target:ProjectTypes.MsbuildTarget) =
-                                        target.Children
-                                            |> Seq.tryFind(fun child -> ProcessChildren(child.Key, child.Value))
+                                        let ProcessTarget(target:ProjectTypes.MsbuildTarget) =
+                                            target.Children
+                                                |> Seq.tryFind(fun child -> ProcessChildren(child.Key, child.Value))
 
-                                    targets
-                                        |> Seq.tryFind(fun target -> ProcessTarget(target).IsSome) |> ignore
-
+                                        targets
+                                            |> Seq.tryFind(fun target -> ProcessTarget(target).IsSome) |> ignore
+                                    with
+                                    | ex -> 
+                                        let warning = sprintf "Invalid additional include Path : %s <=> %s" directory ex.Message
+                                        Helpers.AddWarning(project.Value.Path, warning)
 
 let CreateTargetTree(path : string, target : string,
                      nugetPackageBase : string, 
