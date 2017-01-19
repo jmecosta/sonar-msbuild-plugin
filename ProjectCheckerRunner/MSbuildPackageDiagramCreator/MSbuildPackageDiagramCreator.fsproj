@@ -25,7 +25,8 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DocumentationFile>$(ExtensionOutputPath)MSbuildPackageDiagramCreator.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
-    <StartArguments>/m D:\prod\structures-vs2013\MSBuild\RunFast.msbuild /t:BuildTSAndDotAppsNORPC</StartArguments>
+    <StartArguments>/m D:\prod\structures\MSBuild\RunFast.msbuild /t:BuildTSAndDotAppsNORPC</StartArguments>
+    <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>

@@ -115,22 +115,22 @@ let PopulateLinkLibsDepedencies(item : ProjectItemDefinition, project : ProjectT
                       "uuid.lib";"OldNames.lib";"shell32.lib"; "oleaut32.lib";
                       "ws2_32.lib";"Advapi32.lib";"odbc32.lib"; "odbccp32.lib"; "msvcrt.lib";
                       "wsock32.lib";"kernel32.lib"; "Iphlpapi.lib"; "Rpcrt4.lib"; "dbghelp.lib"; "msvcprt.lib";"psapi.lib";
-                      "gdi32.lib"; "winspool.lib" ; "version.lib"; "delayimp.lib"; "Shlwapi.lib"; "comsuppw.lib"; "mscoree.lib"; "msvcmrt.lib"]
-    let AddDepFile(c:string) =
-        if not(project.DepedentLibs.Contains(c)) &&
-            not((systemLibs |> Seq.tryFind (fun lib -> lib.ToLower().Equals(c.ToLower()))).IsSome) && not(c = "") then
+                      "gdi32.lib"; "winspool.lib" ; "version.lib"; "delayimp.lib"; "Shlwapi.lib"; "comsuppw.lib"; "mscoree.lib"; "msvcmrt.lib"; "rpcns4.lib"]
 
-            if not(c.Contains("*")) then
-                // check if its in nuget packages
-                let absS = Path.GetFullPath(c).ToLower()
-                let packagesF = Path.GetFullPath(packagesBase).ToLower()
-                if not(absS.ToLower().Contains(packagesF)) then
-                    if Path.IsPathRooted(c) then
-                        project.DepedentLibs.Add(c) |> ignore
-                    else
-                        project.DepedentLibs.Add(c) |> ignore
+    let AddDepFile(c:string) =
+        if not((systemLibs |> Seq.tryFind (fun lib -> lib.ToLower().Equals(c.ToLower()))).IsSome) && not(c = "") then
+            let searchPattern = Path.GetFileName(c);
+            let basePath = Path.GetDirectoryName(c);
+
+            if basePath <> "" then
+                for file in Directory.EnumerateFiles(basePath, searchPattern) do
+                    if not(project.DepedentLibs.Contains(file)) &&
+                        not((systemLibs |> Seq.tryFind (fun lib -> lib.ToLower().Equals(file.ToLower()))).IsSome) && not(c = "") then
+                        project.DepedentLibs.Add(file) |> ignore
             else
-                printfn "Wrong Lib Include path %s -> %s" c project.Path
+                if not(project.DepedentLibs.Contains(c)) &&
+                    not((systemLibs |> Seq.tryFind (fun lib -> lib.ToLower().Equals(c.ToLower()))).IsSome) && not(c = "") then
+                    project.DepedentLibs.Add(c) |> ignore
 
     let AddLibIncludeDir(c:string) =
         let path = 
@@ -362,7 +362,8 @@ let PreProcessSolution(nugetIgnorePackages : string,
                             project.Value.SystemIncludeDirs.Add(includeData) |> ignore
 
                     if not(Path.GetFileNameWithoutExtension(project.Value.Path).ToLower().Equals(project.Value.Name.ToLower())) then
-                        raise(ProjectTypes.IncorrectNameForProject("Post Project Incorrectly Named"))
+                        Helpers.AddWarning(project.Value.Path, "Project Path Does Not Match Output Path")
+                    //    raise(ProjectTypes.IncorrectNameForProject("Post Project Incorrectly Named"))
 
                     let props = msbuildproject.AllEvaluatedProperties
                     for importProj in msbuildproject.Imports do
