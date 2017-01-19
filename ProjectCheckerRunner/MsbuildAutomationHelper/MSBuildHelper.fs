@@ -120,21 +120,20 @@ let PopulateLinkLibsDepedencies(item : ProjectItemDefinition, project : ProjectT
 
         let AddDepFile(c:string) =
             if not((systemLibs |> Seq.tryFind (fun lib -> lib.ToLower().Equals(c.ToLower()))).IsSome) && not(c = "") then
-                if Directory.Exists(c) then
+                if File.Exists(c) then
                     let searchPattern = Path.GetFileName(c);
                     let basePath = Path.GetDirectoryName(c);
 
                     if basePath <> "" then
                         for file in Directory.EnumerateFiles(basePath, searchPattern) do
-                            if not(project.DepedentLibs.Contains(file)) &&
-                                not((systemLibs |> Seq.tryFind (fun lib -> lib.ToLower().Equals(file.ToLower()))).IsSome) && not(c = "") then
-                                project.DepedentLibs.Add(file) |> ignore
+                            if not(project.DependentLibs.Contains(file)) then
+                                project.DependentLibs.Add(file) |> ignore
                     else
-                        if not(project.DepedentLibs.Contains(c)) &&
-                            not((systemLibs |> Seq.tryFind (fun lib -> lib.ToLower().Equals(c.ToLower()))).IsSome) && not(c = "") then
-                            project.DepedentLibs.Add(c) |> ignore
+                        if not(project.DependentLibs.Contains(c)) then
+                            project.DependentLibs.Add(c) |> ignore
                 else 
-                    Helpers.AddWarning(project.Path, "Additional Lib defined not found : " + c)
+                    if not(project.DependentLibs.Contains(c)) then
+                        project.DependentLibs.Add(c) |> ignore
 
         let AddLibIncludeDir(c:string) =
             let path = 
@@ -143,8 +142,8 @@ let PopulateLinkLibsDepedencies(item : ProjectItemDefinition, project : ProjectT
                 else
                     Path.GetFullPath(Path.Combine(Directory.GetParent(project.Path).ToString(), c))
 
-            if not(project.DepedentLibDirectories.Contains(path)) then
-                project.DepedentLibDirectories.Add(path) |> ignore
+            if not(project.DependentLibDirectories.Contains(path)) then
+                project.DependentLibDirectories.Add(path) |> ignore
 
         item.Metadata
             |> List.ofSeq
@@ -592,7 +591,7 @@ let GenerateExternalBuildDependenciesForSolutions(targets : ProjectTypes.Msbuild
         solutionIn.Projects
             |> Array.ofSeq
             |> Array.iter (fun b ->
-                b.Value.DepedentLibs |> Seq.iter (fun c ->
+                b.Value.DependentLibs |> Seq.iter (fun c ->
                     (if not(listOfLibsLink.Contains(c)) then listOfLibsLink <- listOfLibsLink.Add(c)))
                 b.Value.AdditionalIncludeDirectories |> Seq.iter (fun c ->
                     (if not(allowedSearchFolders.Contains(c)) then allowedSearchFolders <- allowedSearchFolders.Add(c))))
