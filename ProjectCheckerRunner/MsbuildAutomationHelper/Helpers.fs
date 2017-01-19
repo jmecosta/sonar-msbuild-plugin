@@ -150,8 +150,12 @@ let GetIncludePathsForFile(pathInput : string, additionalIncludeDirectories : st
                     |> Seq.iter (fun matchdata -> AddHeader matchdata)
 
             if not(cacheOfHeaders.ContainsKey(fileToCheck)) then
-                File.ReadAllLines(fileToCheck) |> Array.Parallel.iter (fun line -> CheckLine(line, fileToCheck)) // parallel
-                cacheOfHeaders <- cacheOfHeaders.Add(fileToCheck, headersData)
+                if File.Exists(fileToCheck) then
+                    File.ReadAllLines(fileToCheck) |> Array.Parallel.iter (fun line -> CheckLine(line, fileToCheck)) // parallel
+                    cacheOfHeaders <- cacheOfHeaders.Add(fileToCheck, headersData)
+                else
+                    AddWarning(projectPath, "File : " + fileToCheck + " was not found")
+
                 headersData
             else
                 cacheOfHeaders.[fileToCheck]

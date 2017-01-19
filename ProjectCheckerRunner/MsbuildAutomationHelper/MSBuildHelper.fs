@@ -111,46 +111,52 @@ let CreateSolutionData(solution : string) =
 
 let PopulateLinkLibsDepedencies(item : ProjectItemDefinition, project : ProjectTypes.Project, packagesBase : string) = 
 
-    let systemLibs = ["ole32.lib";"user32.lib";"comdlg32.lib"; "advapi32.lib"; 
-                      "uuid.lib";"OldNames.lib";"shell32.lib"; "oleaut32.lib";
-                      "ws2_32.lib";"Advapi32.lib";"odbc32.lib"; "odbccp32.lib"; "msvcrt.lib";
-                      "wsock32.lib";"kernel32.lib"; "Iphlpapi.lib"; "Rpcrt4.lib"; "dbghelp.lib"; "msvcprt.lib";"psapi.lib";
-                      "gdi32.lib"; "winspool.lib" ; "version.lib"; "delayimp.lib"; "Shlwapi.lib"; "comsuppw.lib"; "mscoree.lib"; "msvcmrt.lib"; "rpcns4.lib"]
+    try
+        let systemLibs = ["ole32.lib";"user32.lib";"comdlg32.lib"; "advapi32.lib"; 
+                          "uuid.lib";"OldNames.lib";"shell32.lib"; "oleaut32.lib";
+                          "ws2_32.lib";"Advapi32.lib";"odbc32.lib"; "odbccp32.lib"; "msvcrt.lib";
+                          "wsock32.lib";"kernel32.lib"; "Iphlpapi.lib"; "Rpcrt4.lib"; "dbghelp.lib"; "msvcprt.lib";"psapi.lib";
+                          "gdi32.lib"; "winspool.lib" ; "version.lib"; "delayimp.lib"; "Shlwapi.lib"; "comsuppw.lib"; "mscoree.lib"; "msvcmrt.lib"; "rpcns4.lib"]
 
-    let AddDepFile(c:string) =
-        if not((systemLibs |> Seq.tryFind (fun lib -> lib.ToLower().Equals(c.ToLower()))).IsSome) && not(c = "") then
-            let searchPattern = Path.GetFileName(c);
-            let basePath = Path.GetDirectoryName(c);
+        let AddDepFile(c:string) =
+            if not((systemLibs |> Seq.tryFind (fun lib -> lib.ToLower().Equals(c.ToLower()))).IsSome) && not(c = "") then
+                if Directory.Exists(c) then
+                    let searchPattern = Path.GetFileName(c);
+                    let basePath = Path.GetDirectoryName(c);
 
-            if basePath <> "" then
-                for file in Directory.EnumerateFiles(basePath, searchPattern) do
-                    if not(project.DepedentLibs.Contains(file)) &&
-                        not((systemLibs |> Seq.tryFind (fun lib -> lib.ToLower().Equals(file.ToLower()))).IsSome) && not(c = "") then
-                        project.DepedentLibs.Add(file) |> ignore
-            else
-                if not(project.DepedentLibs.Contains(c)) &&
-                    not((systemLibs |> Seq.tryFind (fun lib -> lib.ToLower().Equals(c.ToLower()))).IsSome) && not(c = "") then
-                    project.DepedentLibs.Add(c) |> ignore
+                    if basePath <> "" then
+                        for file in Directory.EnumerateFiles(basePath, searchPattern) do
+                            if not(project.DepedentLibs.Contains(file)) &&
+                                not((systemLibs |> Seq.tryFind (fun lib -> lib.ToLower().Equals(file.ToLower()))).IsSome) && not(c = "") then
+                                project.DepedentLibs.Add(file) |> ignore
+                    else
+                        if not(project.DepedentLibs.Contains(c)) &&
+                            not((systemLibs |> Seq.tryFind (fun lib -> lib.ToLower().Equals(c.ToLower()))).IsSome) && not(c = "") then
+                            project.DepedentLibs.Add(c) |> ignore
+                else 
+                    Helpers.AddWarning(project.Path, "Additional Lib defined not found : " + c)
 
-    let AddLibIncludeDir(c:string) =
-        let path = 
-            if Path.IsPathRooted(c) then
-                c
-            else
-                Path.GetFullPath(Path.Combine(Directory.GetParent(project.Path).ToString(), c))
+        let AddLibIncludeDir(c:string) =
+            let path = 
+                if Path.IsPathRooted(c) then
+                    c
+                else
+                    Path.GetFullPath(Path.Combine(Directory.GetParent(project.Path).ToString(), c))
 
-        if not(project.DepedentLibDirectories.Contains(path)) then
-            project.DepedentLibDirectories.Add(path) |> ignore
+            if not(project.DepedentLibDirectories.Contains(path)) then
+                project.DepedentLibDirectories.Add(path) |> ignore
 
-    item.Metadata
-        |> List.ofSeq
-        |> Array.ofList
-        |> Array.Parallel.iter (fun item ->
-            if (item.Name.Equals("AdditionalLibraryDirectories")) then
-                item.EvaluatedValue.Split(';') |> Seq.iter (fun c -> AddLibIncludeDir(c))
-            if (item.Name.Equals("AdditionalDependencies")) then
-                item.EvaluatedValue.Split(';') |> Seq.iter (fun c -> AddDepFile(c.Trim()))
-        )
+        item.Metadata
+            |> List.ofSeq
+            |> Array.ofList
+            |> Array.Parallel.iter (fun item ->
+                if (item.Name.Equals("AdditionalLibraryDirectories")) then
+                    item.EvaluatedValue.Split(';') |> Seq.iter (fun c -> AddLibIncludeDir(c))
+                if (item.Name.Equals("AdditionalDependencies")) then
+                    item.EvaluatedValue.Split(';') |> Seq.iter (fun c -> AddDepFile(c.Trim()))
+            )
+    with
+    | ex -> raise ex
 
 // create builds information for project, include paths and additional options
 // it also follows includes to find cyclic dependencies
