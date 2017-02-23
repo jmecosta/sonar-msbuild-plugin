@@ -326,6 +326,8 @@ let PreProcessSolution(nugetIgnorePackages : string,
 
     let supportedExtensions = Set.ofList [".vcxproj"]
 
+
+
     for project in solution.Projects do
         let extension = Path.GetExtension(project.Value.Path).ToLower()
 
@@ -334,12 +336,19 @@ let PreProcessSolution(nugetIgnorePackages : string,
                 if extension = ".vcxproj" then
                     printf "Handle %A \n" project.Value.Path
                     let msbuildproject =
-                        if toolsVersion.StartsWith("14.0") || toolsVersion.StartsWith("15.0") then
-                            new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "14.0")
-                        elif toolsVersion.StartsWith("12.0") then
-                            new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "12.0")
+                        let projects = ProjectCollection.GlobalProjectCollection.GetLoadedProjects(project.Value.Path)
+    
+                        if projects.Count <> 0 then
+                            let data = projects.GetEnumerator();
+                            data.MoveNext() |> ignore
+                            data.Current
                         else
-                            new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "4.0")
+                            if toolsVersion.StartsWith("14.0") || toolsVersion.StartsWith("15.0") then
+                                new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "14.0")
+                            elif toolsVersion.StartsWith("12.0") then
+                                new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "12.0")
+                            else
+                                new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "4.0")
 
                     project.Value.ImportLib <- match (msbuildproject.AllEvaluatedItemDefinitionMetadata |> Seq.tryFind (fun c -> c.Name.Equals("ImportLibrary"))) with | Some value -> value.EvaluatedValue | _ -> ""
 
