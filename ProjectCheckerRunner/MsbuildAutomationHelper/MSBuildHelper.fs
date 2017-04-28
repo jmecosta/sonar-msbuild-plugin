@@ -166,6 +166,9 @@ let GenerateBuildCppBuildInformation(additionalIncludeDirectories : byref<Set<st
                                      packagesBase : string,
                                      detectCycles : bool) = 
 
+    let mutable compileCommand = "cl.exe "
+    let mutable compileCommandClang = "clang++ "
+    let mutable compileCommandGcc = "gcc "
     let projectPath = Path.GetFullPath(Path.GetDirectoryName(projectToProcess.Path)).ToString()
     let pathEvaluateInclude = 
         if Path.IsPathRooted(item.EvaluatedInclude) then
@@ -180,9 +183,9 @@ let GenerateBuildCppBuildInformation(additionalIncludeDirectories : byref<Set<st
         additionalIncludeDirectories <- additionalIncludeDirectories.Add(projectPath)
 
     // process additional include dirs
-    let metadataelems = Seq.toList item.Metadata |> List.tryFind (fun c -> c.Name.Equals("AdditionalIncludeDirectories"))
+    let metadataelemsdirs = Seq.toList item.Metadata |> List.tryFind (fun c -> c.Name.Equals("AdditionalIncludeDirectories"))
 
-    match metadataelems with
+    match metadataelemsdirs with
     | Some value -> 
         let includeDirs = value.EvaluatedValue.Split([|';'; '\n'; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
         for dir in includeDirs do
@@ -190,9 +193,16 @@ let GenerateBuildCppBuildInformation(additionalIncludeDirectories : byref<Set<st
             if not(path.Equals("")) && (String.IsNullOrEmpty(packagesBase) || not(path.Contains(packagesBase))) && not(additionalIncludeDirectories.Contains(path)) then
                 if Path.IsPathRooted(path) then
                     additionalIncludeDirectories <- additionalIncludeDirectories.Add(path)
+                    compileCommand <- compileCommand + "-I" + path + " "
+                    compileCommandClang <- compileCommandClang + "-I" + path + " "
+                    compileCommandGcc <- compileCommandGcc + "-I" + path + " "
                 else
                     let basePath = Directory.GetParent(projectToProcess.Path).ToString()
-                    additionalIncludeDirectories <- additionalIncludeDirectories.Add(Path.GetFullPath(Path.Combine(basePath, path)))
+                    let pathData = Path.GetFullPath(Path.Combine(basePath, path))
+                    additionalIncludeDirectories <- additionalIncludeDirectories.Add(pathData)
+                    compileCommand <- compileCommand + "-I" + pathData + " "
+                    compileCommandClang <- compileCommandClang + "-I" + pathData + " "
+                    compileCommandGcc <- compileCommandGcc + "-I" + pathData + " "
 
                 if not(projectToProcess.AdditionalIncludeDirectories.Contains(path)) then
                     projectToProcess.AdditionalIncludeDirectories.Add(path) |> ignore
@@ -206,27 +216,49 @@ let GenerateBuildCppBuildInformation(additionalIncludeDirectories : byref<Set<st
                 includes <- includes.Add(fileinclude)
 
     // retrieve additional options for compilation
-    let metadataelems = Seq.toList item.Metadata |> List.tryFind (fun c -> c.Name.Equals("AdditionalOptions"))
+    let metadataelemsoptions = Seq.toList item.Metadata |> List.tryFind (fun c -> c.Name.Equals("AdditionalOptions"))
 
-    match metadataelems with
+    match metadataelemsoptions with
     | Some value -> 
         let additionalOptions = value.EvaluatedValue.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
         for trimmedData in additionalOptions do
             let option = trimmedData.Trim()
+            compileCommand <- compileCommand + option + " "
+
             if not(option.Equals("")) && not(projectToProcess.AdditionalOptions.Contains(option)) then
                 projectToProcess.AdditionalOptions.Add(option) |> ignore
     | _ -> ()
 
     // retrive defines
-    let metadataelems = Seq.toList item.Metadata |> List.tryFind (fun c -> c.Name.Equals("PreprocessorDefinitions"))
+    let metadataelemsdef = Seq.toList item.Metadata |> List.tryFind (fun c -> c.Name.Equals("PreprocessorDefinitions"))
 
-    match metadataelems with
+    match metadataelemsdef with
     | Some value -> 
         let defines = value.EvaluatedValue.Split([|';'; '\n'; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries)
         for define in defines do
+            if define.Contains(" ") then 
+                let defineAndValue = define.Split('=')
+                compileCommandClang <- compileCommandClang + "-D" + defineAndValue.[0] + "=\"" + defineAndValue.[1] + "\""
+                compileCommandGcc <- compileCommandGcc + "-D" + defineAndValue.[0] + "=\"" + defineAndValue.[1] + "\""
+                compileCommand <- compileCommand + "/D \"" + define + "\" "
+            else
+                compileCommandClang <- compileCommandClang + "-D" + define + " "
+                compileCommandGcc <- compileCommandGcc + "-D" + define + " "
+                compileCommand <- compileCommand + "/D " + define + " "
+
             if not(projectToProcess.Defines.Contains(define)) then
                 projectToProcess.Defines.Add(define) |> ignore
     | _ -> ()
+
+    // create compilation unit
+    let unit = new ProjectTypes.CompileUnit()
+    unit.File <- item.EvaluatedInclude
+    unit.Directory <- item.Project.DirectoryPath
+    unit.VcCommand <- compileCommand  + unit.File
+    unit.ClangCommand <- compileCommandClang  + unit.File
+    unit.GccCommand <- compileCommandGcc + unit.File
+
+    projectToProcess.CompileUnits.Add(unit)
 
 let PopulateProjectReferences(item : ProjectItem, project : ProjectTypes.Project, solution : ProjectTypes.Solution) =
     if item.ItemType.Equals("ProjectReference") then

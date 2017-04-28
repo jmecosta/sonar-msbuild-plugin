@@ -18,6 +18,13 @@ type AssemblyRef() =
     member val Name : string =  "" with get, set
     member val Path : string = "" with get, set
 
+type CompileUnit() = 
+    member val File : string =  "" with get, set
+    member val Directory : string = "" with get, set
+    member val VcCommand : string = "" with get, set
+    member val ClangCommand : string = "" with get, set
+    member val GccCommand : string = "" with get, set
+
 [<AllowNullLiteralAttribute>]
 type Project() =
     member val Name : string =  "" with get, set
@@ -31,7 +38,6 @@ type Project() =
     member val PlatformToolset : string = "" with get, set
     member val Platform : string = "" with get, set
 
-
     member val SolutionInternalBuildDepencies :  System.Collections.Generic.Dictionary<Guid, Project>  = new System.Collections.Generic.Dictionary<Guid, Project>() with get, set
     member val ProjectReferences :  System.Collections.Generic.Dictionary<Guid, Project>  = new System.Collections.Generic.Dictionary<Guid, Project>() with get, set
     member val HeaderReferences : System.Collections.Generic.Dictionary<Guid, Project>  = new System.Collections.Generic.Dictionary<Guid, Project>() with get, set
@@ -44,9 +50,7 @@ type Project() =
     member val AssemblyReferences : System.Collections.Generic.Dictionary<Guid, AssemblyRef>  = new System.Collections.Generic.Dictionary<Guid, AssemblyRef>() with get, set
     member val NugetReferences : Set<string> = Set.empty with get, set
     member val Visible : bool = false with get, set
-
-
-
+    member val CompileUnits : System.Collections.Generic.List<CompileUnit> = new System.Collections.Generic.List<CompileUnit>() with get, set
 
 
 type DirectoryRef() = 
