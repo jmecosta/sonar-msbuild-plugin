@@ -6,3 +6,4 @@ ProjectCheckerRunner/MSBuild
 ProjectCheckerRunner/BuildDrop/**
 ProjectCheckerRunner/buildlog*
 **/.vs/**
+ProjectCheckerRunner/nuget/*.nupkg
