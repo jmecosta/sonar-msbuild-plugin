@@ -179,7 +179,7 @@ type VSProjectUtils() =
                 let validFile = filterAndChangeStringsInFile headers.Include
                 if not(String.IsNullOrEmpty(validFile)) then
                     if Path.IsPathRooted(validFile) then
-                        files <- files @ [validFile]                        
+                        files <- files @ [validFile]
                     else
                         files <- files @ [Path.Combine(Directory.GetParent(projectFile).ToString(), validFile)]
 

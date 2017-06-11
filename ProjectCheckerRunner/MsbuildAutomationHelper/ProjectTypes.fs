@@ -37,6 +37,8 @@ type Project() =
     member val TargetPath : string = "" with get, set
     member val PlatformToolset : string = "" with get, set
     member val Platform : string = "" with get, set
+    member val OutputPath : string = "" with get, set
+    member val Type : string = "" with get, set
 
     member val SolutionInternalBuildDepencies :  System.Collections.Generic.Dictionary<Guid, Project>  = new System.Collections.Generic.Dictionary<Guid, Project>() with get, set
     member val ProjectReferences :  System.Collections.Generic.Dictionary<Guid, Project>  = new System.Collections.Generic.Dictionary<Guid, Project>() with get, set
@@ -51,6 +53,7 @@ type Project() =
     member val NugetReferences : Set<string> = Set.empty with get, set
     member val Visible : bool = false with get, set
     member val CompileUnits : System.Collections.Generic.List<CompileUnit> = new System.Collections.Generic.List<CompileUnit>() with get, set
+    member val DllReferences : System.Collections.Generic.HashSet<string> = new System.Collections.Generic.HashSet<string>() with get, set
 
 
 type DirectoryRef() = 
