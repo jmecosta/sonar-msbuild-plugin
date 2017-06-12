@@ -412,6 +412,8 @@ let PreProcessSolution(nugetIgnorePackages : string,
                 project.Value.CLRSupport <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("CLRSupport"))) with | Some value -> value.EvaluatedValue | _ -> ""
 
                 if project.Value.CLRSupport <> "" then
+                    let name = match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("AssemblyName"))) with | Some value -> value.EvaluatedValue | _ -> ""
+                    project.Value.OutputPath <- name + ".dll"
                     for evaluatedType in msbuildproject.AllEvaluatedItems do 
                         if evaluatedType.ItemType = "Reference" then
                             let hintPath = match (evaluatedType.DirectMetadata |> Seq.tryFind (fun c -> c.Name.Equals("HintPath"))) with | Some value -> value.EvaluatedValue | _ -> ""
