@@ -386,7 +386,7 @@ let PreProcessSolution(nugetIgnorePackages : string,
                 let outputType = match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("OutputType"))) with | Some value -> value.EvaluatedValue | _ -> ""
                 let name = match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("AssemblyName"))) with | Some value -> value.EvaluatedValue | _ -> ""
 
-                if outputType = "Library" then
+                if outputType.ToLower() = "library" then
                     project.Value.OutputPath <- name + ".dll"
                 else
                     project.Value.OutputPath <- name + ".exe"
