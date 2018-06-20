@@ -98,69 +98,69 @@ let EnumerateFilesInIncludeDir(additionalIncludeDirectories : string list, proje
 // FSharp 4.3.1 compatibility
 let mutable headersData : string [] = Array.empty
 
+let rec CheckFile(fileToCheck:string,
+                  stack:ImmutableStack<string>,
+                  pathInput : string,
+                  projectPath : string) = 
+    //printf "Recursion Follow %s \n" fileToCheck
+
+    let CheckLine(line:string, originalFile:string) = 
+        let AddHeader(matchdata:Match) =
+            let fileFound = matchdata.Groups.[1].Value
+            if pathInput.ToLower() = fileFound.ToLower()  || Path.GetFileName(originalFile).ToLower() = fileFound.ToLower() then
+                let warning = sprintf "Recursive inclusion of same file : %s <=> %s" pathInput fileFound
+                AddWarning(pathInput, warning)
+            else
+                let ignored = ignoreHeaders |> List.tryFind(fun c -> fileFound.StartsWith(c + ".") || fileFound.StartsWith(c))
+                match ignored with
+                | Some data -> ()
+                | _ ->
+                    match FindFullPathFromAdditionalDirectories(fileFound, fileToCheck) with
+                    | Some data -> 
+                        let abspath = Path.Combine(data.Key, fileFound)
+                        let stackData = stack.All()
+                        let foundInStack = stackData |> Seq.tryFind(fun c -> c.Equals(abspath))
+                        match foundInStack with
+                        | Some value ->
+                            let warning = sprintf "Cyclic include headers : %A" (stack.Push abspath)
+                            AddWarning(pathInput, warning)
+                        | _ -> 
+                            //printf "STACK %A \n" stackToCheck
+                            //printf "Recursion Follow %A from First Entry %A and Previous Entry %A\n" abspath pathInput originalFile
+
+                            // add found header to headers for file
+                            if (headersData |> Seq.tryFind (fun d -> d.Equals(abspath))).IsNone then
+                                    headersData <- Array.append headersData [|abspath|]
+
+                            let subElements = CheckFile(abspath, stack.Push abspath, pathInput, projectPath)
+                            subElements |> Seq.iter (fun c -> 
+                                if (headersData |> Seq.tryFind (fun d -> d.Equals(c))).IsNone then
+                                    headersData <- Array.append headersData [|c|]
+                                )
+                    | _ -> ()
+
+        (Regex.Matches(line, "[ ]*\#include[ ]+[\"<]([^\"]*)[\">]"))
+            |> Seq.cast
+            |> Seq.iter (fun matchdata -> AddHeader matchdata)
+
+    if not(cacheOfHeaders.ContainsKey(fileToCheck)) then
+        if File.Exists(fileToCheck) then
+            File.ReadAllLines(fileToCheck) |> Array.Parallel.iter (fun line -> CheckLine(line, fileToCheck)) // parallel
+            cacheOfHeaders <- cacheOfHeaders.Add(fileToCheck, headersData)
+        else
+            AddWarning(projectPath, "File : " + fileToCheck + " was not found")
+
+        headersData
+    else
+        cacheOfHeaders.[fileToCheck]
+
 // gets include files for header, should follow paths upstream.
 let GetIncludePathsForFile(pathInput : string, additionalIncludeDirectories : string list, projectPath : string) =
 
-    let fileNameLower = Path.GetFileName(pathInput).ToLower()
     EnumerateFilesInIncludeDir(additionalIncludeDirectories, projectPath)
-
+    headersData <- Array.empty
     if not(cacheOfHeaders.ContainsKey(Path.GetFullPath(pathInput))) then
-
-        let rec CheckFile(fileToCheck:string, stack:ImmutableStack<string>) = 
-            //printf "Recursion Follow %s \n" fileToCheck
-            headersData <- Array.empty
-            let CheckLine(line:string, originalFile:string) = 
-                let AddHeader(matchdata:Match) =
-                    let fileFound = matchdata.Groups.[1].Value
-                    let fileNameLowerOriginal = Path.GetFileName(originalFile).ToLower()
-                    if fileNameLower = fileFound.ToLower()  || fileNameLowerOriginal = fileFound.ToLower() then
-                        let warning = sprintf "Recursive inclusion of same file : %s <=> %s" pathInput fileFound
-                        AddWarning(pathInput, warning)
-                    else
-                        let ignored = ignoreHeaders |> List.tryFind(fun c -> fileFound.StartsWith(c + ".") || fileFound.StartsWith(c))
-                        match ignored with
-                        | Some data -> ()
-                        | _ ->
-                            match FindFullPathFromAdditionalDirectories(fileFound, fileToCheck) with
-                            | Some data -> 
-                                let abspath = Path.Combine(data.Key, fileFound)
-                                let stackData = stack.All()
-                                let foundInStack = stackData |> Seq.tryFind(fun c -> c.Equals(abspath))
-                                match foundInStack with
-                                | Some value ->
-                                    let warning = sprintf "Cyclic include headers : %A" (stack.Push abspath)
-                                    AddWarning(pathInput, warning)
-                                | _ -> 
-                                    //printf "STACK %A \n" stackToCheck
-                                    //printf "Recursion Follow %A from First Entry %A and Previous Entry %A\n" abspath pathInput originalFile
-
-                                    // add found header to headers for file
-                                    if (headersData |> Seq.tryFind (fun d -> d.Equals(abspath))).IsNone then
-                                            headersData <- Array.append headersData [|abspath|]
-
-                                    let subElements = CheckFile(abspath, stack.Push abspath)
-                                    subElements |> Seq.iter (fun c -> 
-                                        if (headersData |> Seq.tryFind (fun d -> d.Equals(c))).IsNone then
-                                            headersData <- Array.append headersData [|c|]
-                                        )
-                            | _ -> ()
-
-                (Regex.Matches(line, "[ ]*\#include[ ]+[\"<]([^\"]*)[\">]"))
-                    |> Seq.cast
-                    |> Seq.iter (fun matchdata -> AddHeader matchdata)
-
-            if not(cacheOfHeaders.ContainsKey(fileToCheck)) then
-                if File.Exists(fileToCheck) then
-                    File.ReadAllLines(fileToCheck) |> Array.Parallel.iter (fun line -> CheckLine(line, fileToCheck)) // parallel
-                    cacheOfHeaders <- cacheOfHeaders.Add(fileToCheck, headersData)
-                else
-                    AddWarning(projectPath, "File : " + fileToCheck + " was not found")
-
-                headersData
-            else
-                cacheOfHeaders.[fileToCheck]
-
         let callStack = ImmutableStack.Empty.Push pathInput
-        CheckFile(pathInput, callStack)
+        CheckFile(pathInput, callStack, pathInput, projectPath)
     else
         cacheOfHeaders.[Path.GetFullPath(pathInput)]

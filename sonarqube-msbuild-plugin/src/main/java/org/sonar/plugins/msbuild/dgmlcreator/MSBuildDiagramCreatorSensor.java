@@ -1,4 +1,23 @@
 /*
+ * Sonar MSBuild Plugin :: Squid
+ * Copyright (C) 2015-2018 SonarSource SA
+ * mailto:info AT sonarsource DOT com
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+/*
  * Sonar MSBuild Plugin, open source software quality management tool.
  * Author(s) : Jorge Costa @ jmecsoftware.com
  * 
@@ -16,20 +35,19 @@ package org.sonar.plugins.msbuild.dgmlcreator;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 import org.sonar.plugins.msbuild.projectchecker.*;
 import org.sonar.api.batch.sensor.Sensor;
 import org.sonar.api.batch.sensor.SensorContext;
 import org.sonar.api.utils.log.Logger;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.api.batch.fs.FileSystem;
-import org.sonar.api.config.Settings;
 import org.sonar.api.utils.command.Command;
 import org.sonar.api.utils.command.CommandExecutor;
 import org.sonar.api.utils.command.StreamConsumer;
 
-
-import org.sonar.api.batch.bootstrap.ProjectReactor;
 import org.sonar.api.batch.sensor.SensorDescriptor;
+import org.sonar.api.config.Configuration;
 import org.sonar.plugins.msbuild.MSBuildRunnerExtractor;
 import org.sonar.plugins.msbuild.MSBuildLanguage;
 import org.sonar.plugins.msbuild.MSBuildMetrics;
@@ -39,10 +57,9 @@ import org.sonar.plugins.msbuild.utils.MSBuildUtils;
 public class MSBuildDiagramCreatorSensor implements Sensor {
   public static final Logger LOG = Loggers.get(MSBuildDiagramCreatorSensor.class);
   
-  private final Settings settings;
+  private final Configuration settings;
   private final MSBuildRunnerExtractor extractor;
   private final FileSystem fs;
-  private final ProjectReactor reactor;
   
   public static final String DIAGRAM_CREATOR_PATH = "sonar.msbuild.diagramCreator.path";
   public static final String DIAGRAM_CREATOR_ENABLED = "sonar.msbuild.diagramCreator.enabled";
@@ -59,11 +76,10 @@ public class MSBuildDiagramCreatorSensor implements Sensor {
   public static final String PLOT_HEADER_DEPENDENCIES_INSIDE_PROJECT  = "sonar.msbuild.plot.header.dependencies.inside.project";
   public static final String PLOT_HEADER_DEPENDENCIES  = "sonar.msbuild.plot.header.dependencies";
   
-  public MSBuildDiagramCreatorSensor(Settings settings, MSBuildRunnerExtractor extractor, FileSystem fs, ProjectReactor reactor) {
+  public MSBuildDiagramCreatorSensor(Configuration settings, MSBuildRunnerExtractor extractor, FileSystem fs) {
     this.settings = settings;
     this.extractor = extractor;
     this.fs = fs;
-    this.reactor = reactor;
   }
 
   @Override
@@ -73,13 +89,13 @@ public class MSBuildDiagramCreatorSensor implements Sensor {
 
   @Override
   public void execute(SensorContext context) {
-    if (!settings.getBoolean(DIAGRAM_CREATOR_ENABLED)) {
+    if (!settings.getBoolean(DIAGRAM_CREATOR_ENABLED).get()) {
       LOG.debug("Diagram Creator Skipped - Disabled");
       return;
     }
     
-    String moduleKey = context.settings().getString("sonar.moduleKey");
-    if (moduleKey != null) {
+    Optional<String> moduleKey = context.config().get("sonar.moduleKey");
+    if (moduleKey.isPresent()) {
         LOG.debug("Runs Diagram Creator only at top level project skip : Module Key = '{}'", moduleKey);
         return;        
     }
@@ -90,11 +106,11 @@ public class MSBuildDiagramCreatorSensor implements Sensor {
 
   private void analyze() {       
     try {       
-      String projectRoot = reactor.getRoot().getBaseDir().getCanonicalPath();      
+      String projectRoot = fs.baseDir().getCanonicalPath();      
       String projectRootPackages = new File(projectRoot, "Packages").toString();
       
-      if (new File(settings.getString(PACKAGES_BASE_PATH)).isAbsolute()) {
-        projectRootPackages = settings.getString(PACKAGES_BASE_PATH);
+      if (new File(settings.get(PACKAGES_BASE_PATH).get()).isAbsolute()) {
+        projectRootPackages = settings.get(PACKAGES_BASE_PATH).get();
       }
       
       StringBuilder sb = new StringBuilder();
@@ -107,12 +123,12 @@ public class MSBuildDiagramCreatorSensor implements Sensor {
       appendLine(sb, "  <IgnoreIncludeFolders>");
       appendLine(sb, "      " + MSBuildUtils.getStringArrayProperty(IGNORE_LIST_INCLUDES_FOLDERS, this.settings));
       appendLine(sb, "  </IgnoreIncludeFolders>");
-      appendLine(sb, "  <PlotHeaderDependency>" + (settings.getBoolean(PLOT_HEADER_DEPENDENCIES) ? "true" : "false")  + "</PlotHeaderDependency>");
+      appendLine(sb, "  <PlotHeaderDependency>" + (settings.getBoolean(PLOT_HEADER_DEPENDENCIES).get() ? "true" : "false")  + "</PlotHeaderDependency>");
       appendLine(sb, "  <CheckRedundantIncludes>false</CheckRedundantIncludes>");
-      appendLine(sb, "  <PlotPackagesDependecies>" + (settings.getBoolean(PLOT_NUGET_DEPENDENCIES) ? "true" : "false")  + "</PlotPackagesDependecies>");
-      appendLine(sb, "  <PlotProjectDependencies>" + (settings.getBoolean(PLOT_PROJECT_DEPENDENCIES) ? "true" : "false")  + "</PlotProjectDependencies>");
-      appendLine(sb, "  <PlotSolutionBuildDependencies>" + (settings.getBoolean(PLOT_SOLUTION_BUILD_DEPENDENCIES) ? "true" : "false")  + "</PlotSolutionBuildDependencies>");
-      appendLine(sb, "  <PlotHeaderDependencyInsideProject>" + (settings.getBoolean(PLOT_HEADER_DEPENDENCIES_INSIDE_PROJECT) ? "true" : "false")  + "</PlotHeaderDependencyInsideProject>");
+      appendLine(sb, "  <PlotPackagesDependecies>" + (settings.getBoolean(PLOT_NUGET_DEPENDENCIES).get() ? "true" : "false")  + "</PlotPackagesDependecies>");
+      appendLine(sb, "  <PlotProjectDependencies>" + (settings.getBoolean(PLOT_PROJECT_DEPENDENCIES).get() ? "true" : "false")  + "</PlotProjectDependencies>");
+      appendLine(sb, "  <PlotSolutionBuildDependencies>" + (settings.getBoolean(PLOT_SOLUTION_BUILD_DEPENDENCIES).get() ? "true" : "false")  + "</PlotSolutionBuildDependencies>");
+      appendLine(sb, "  <PlotHeaderDependencyInsideProject>" + (settings.getBoolean(PLOT_HEADER_DEPENDENCIES_INSIDE_PROJECT).get() ? "true" : "false")  + "</PlotHeaderDependencyInsideProject>");
       appendLine(sb, "  <PlotHeaderDependencFilter>");
       appendLine(sb, "      " + MSBuildUtils.getStringArrayProperty(HEADER_DEPENDENCY_FILTER, this.settings));
       appendLine(sb, "  </PlotHeaderDependencFilter>");
@@ -127,7 +143,7 @@ public class MSBuildDiagramCreatorSensor implements Sensor {
       
       MSBuildUtils.writeStringToFile(analysisInput.getAbsolutePath(), sb.toString());
       
-      File executableFile = extractor.diagramCreatorFile();
+      File executableFile = extractor.diagramCreatorFile(fs.workDir().getCanonicalPath());
       
       Command command;
       if (OsUtils.isWindows()) {

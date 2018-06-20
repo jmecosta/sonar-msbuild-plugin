@@ -1,4 +1,23 @@
 /*
+ * Sonar MSBuild Plugin :: Squid
+ * Copyright (C) 2015-2018 SonarSource SA
+ * mailto:info AT sonarsource DOT com
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+/*
  * Sonar MSBuild Plugin, open source software quality management tool.
  * Author(s) : Jorge Costa @ jmecsoftware.com
  * 
@@ -16,7 +35,6 @@ package org.sonar.plugins.msbuild.projectchecker;
 
 import org.sonar.api.batch.fs.FileSystem;
 import org.sonar.api.batch.fs.InputFile;
-import org.sonar.api.config.Settings;
 import org.sonar.api.issue.NoSonarFilter;
 import org.sonar.api.measures.FileLinesContextFactory;
 import org.sonar.api.profiles.RulesProfile;
@@ -45,10 +63,10 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.sonar.api.batch.bootstrap.ProjectReactor;
 import org.sonar.api.batch.sensor.SensorDescriptor;
 import org.sonar.api.batch.sensor.issue.NewIssue;
 import org.sonar.api.batch.sensor.issue.NewIssueLocation;
+import org.sonar.api.config.Configuration;
 import org.sonar.api.utils.log.Loggers;
 import org.sonar.plugins.msbuild.MSBuildRunnerExtractor;
 import org.sonar.plugins.msbuild.MSBuildLanguage;
@@ -59,26 +77,24 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
 
   public static final Logger LOG = Loggers.get(MSBuildProjectCheckerExtensionSensor.class);
 
-  private final Settings settings;
+  private final Configuration settings;
   private final MSBuildRunnerExtractor extractor;
   private final FileSystem fs;
   private final FileLinesContextFactory fileLinesContextFactory;
   private final NoSonarFilter noSonarFilter;
   private final RulesProfile ruleProfile;
-  private final ProjectReactor reactor;
 
   public static final String EXTERNAL_CUSTOM_RULES = "sonar.msbuild.projectchecker.customrules";
   public static final String PROJECT_CHECKER_PATH = "sonar.msbuild.prjectChecker.Path";
      
-  public MSBuildProjectCheckerExtensionSensor(Settings settings, MSBuildRunnerExtractor extractor, FileSystem fs, FileLinesContextFactory fileLinesContextFactory,
-    NoSonarFilter noSonarFilter, RulesProfile ruleProfile, ProjectReactor reactor) {
+  public MSBuildProjectCheckerExtensionSensor(Configuration settings, MSBuildRunnerExtractor extractor, FileSystem fs, FileLinesContextFactory fileLinesContextFactory,
+    NoSonarFilter noSonarFilter, RulesProfile ruleProfile) {
     this.settings = settings;
     this.extractor = extractor;
     this.fs = fs;
     this.fileLinesContextFactory = fileLinesContextFactory;
     this.noSonarFilter = noSonarFilter;
     this.ruleProfile = ruleProfile;
-    this.reactor = reactor;
   }
 
   @Override
@@ -94,7 +110,7 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
   
   private void analyze() {       
     try {       
-      String projectRoot = reactor.getRoot().getBaseDir().getCanonicalPath();
+      String projectRoot = fs.workDir().getCanonicalPath();
       
       StringBuilder sb = new StringBuilder();
       appendLine(sb, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
@@ -150,7 +166,8 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
         throw e;
       }
       
-      File executableFile = extractor.projectCheckerFile();
+      File executableFile = extractor.projectCheckerFile(projectRoot);
+      LOG.info("Using ProjectChecker from:" + executableFile.getCanonicalPath());
       
       Command command;
       if (OsUtils.isWindows()) {

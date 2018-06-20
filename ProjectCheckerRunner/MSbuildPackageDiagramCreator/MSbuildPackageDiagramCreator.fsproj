@@ -25,7 +25,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DocumentationFile>$(ExtensionOutputPath)MSbuildPackageDiagramCreator.XML</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
-    <StartArguments>/m:D:\prod\structures\MSBuild\..\MSBuild\RunFast.msbuild /t:BuildTSAndDotAppsNORPC</StartArguments>
+    <StartArguments>/i:c:\prod\structures\MSBuild\.scannerwork\msbuild-diagram-input.xml /o:c:\prod\structures\MSBuild\.scannerwork\msbuild-diagram-output /s:c:\prod\structures\Core\Common\Common.sln</StartArguments>
     <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">

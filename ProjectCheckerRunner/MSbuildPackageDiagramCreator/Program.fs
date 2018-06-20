@@ -27,7 +27,7 @@ let main argv =
             if arguments.ContainsKey("v")  then
                 (arguments.["v"] |> Seq.head)
             else
-                "14.0"
+                "15.0"
 
         let config =
             if arguments.ContainsKey("i") then
@@ -48,6 +48,9 @@ let main argv =
 
                 printfn "Creating %s \n" outputFile
                 DgmlHelper.WriteDgmlSolutionDocument(outputFile, solutionList, config)
+
+                for warning in Helpers.warnings do
+                    printfn "Warning: %s : %s\n" warning.Path warning.Data
 
         elif arguments.ContainsKey("m") then
             let file = arguments.["m"] |> Seq.head

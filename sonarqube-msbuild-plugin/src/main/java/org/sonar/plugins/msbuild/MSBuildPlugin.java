@@ -1,4 +1,23 @@
 /*
+ * Sonar MSBuild Plugin :: Squid
+ * Copyright (C) 2015-2018 SonarSource SA
+ * mailto:info AT sonarsource DOT com
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+/*
  * Sonar MSBuild Plugin, open source software quality management tool.
  * Author(s) : Jorge Costa @ jmecsoftware.com
  * 
@@ -24,7 +43,7 @@ import org.sonar.api.resources.Qualifiers;
 import org.sonar.plugins.msbuild.dgmlcreator.MSBuildDiagramCreatorSensor;
 import org.sonar.plugins.msbuild.projectchecker.MSBuildProjectCheckerRulesDefinition;
 import org.sonar.plugins.msbuild.projectchecker.MSBuildProjectCheckerExtensionSensor;
-import org.sonar.plugins.msbuild.widgets.DmglXmlWidget;
+import org.sonar.plugins.msbuild.projectchecker.MSBuildSonarWayProfile;
 
 public final class MSBuildPlugin implements Plugin {
   public static final String KEY = "msbuild";
@@ -191,15 +210,14 @@ public final class MSBuildPlugin implements Plugin {
     // Sensors
     extensions.add(MSBuildLineCounterSensor.class);
     extensions.add(MSBuildProjectCheckerRulesDefinition.class);
+    extensions.add(MSBuildSonarWayProfile.class);
+    
     extensions.add(MSBuildProjectCheckerExtensionSensor.class);
     extensions.add(MSBuildDiagramCreatorSensor.class);
     extensions.add(MSBuildRunnerExtractor.class);
 
     // metrics
     extensions.add(MSBuildMetrics.class);
-
-    // widgets
-    extensions.add(DmglXmlWidget.class);
               
     extensions.addAll(MsbuildProperties());
     context.addExtensions(extensions);

@@ -218,7 +218,8 @@ let GenerateBuildCppBuildInformation(additionalIncludeDirectories : byref<Set<st
     // detect cyclic headers
     if detectCycles then
         let dirs = (Seq.toList additionalIncludeDirectories)
-        for fileinclude in Helpers.GetIncludePathsForFile(pathEvaluateInclude, dirs, projectToProcess.Path) do
+        let includePathsForFile = Helpers.GetIncludePathsForFile(pathEvaluateInclude, dirs, projectToProcess.Path)
+        for fileinclude in includePathsForFile do
             if not(includes.Contains(fileinclude)) then
                 includes <- includes.Add(fileinclude)
 
@@ -288,8 +289,8 @@ let PopulateProjectReferences(item : ProjectItem, project : ProjectTypes.Project
                     let projectRef = new ProjectTypes.Project()
                     projectRef.Guid <- new Guid(guid)
                     projectRef.Path <- path
-                                    
-                    printfn "Invalid project reference to external project %s -> %s" project.Path path
+                    let data = sprintf "Invalid project reference to external project %s" path
+                    Helpers.AddWarning(project.Path, data)
                     projectRef
 
             if not(project.ProjectReferences.ContainsKey(projectRef.Guid)) then
@@ -300,7 +301,9 @@ let PopulateProjectReferences(item : ProjectItem, project : ProjectTypes.Project
                 Helpers.AddWarning(project.Path, data)
         | _ -> ()
 
-let CheckAdditionalIncludeDirectories(additionalIncludeDirectories : Set<string>, includes : Set<string>, project : ProjectTypes.Project) =
+let CheckAdditionalIncludeDirectories(additionalIncludeDirectories : Set<string>,
+                                      includes : Set<string>,
+                                      project : ProjectTypes.Project) =
 
     let VerifyPathExists(c, m) =
         try
@@ -318,7 +321,8 @@ let CheckAdditionalIncludeDirectories(additionalIncludeDirectories : Set<string>
         |> Seq.iter
             (fun c -> 
                 if not(CheckFileExists(c)) then
-                    Helpers.AddWarning(project.Path, (sprintf "Additional Include Path not In Use: %s" c))
+                    if not(project.Path.Contains(c)) then
+                        Helpers.AddWarning(project.Path, (sprintf "Additional Include Path not In Use: %s" c))
                     )
 
 let mutable additionalIncludeDirectories : Set<string> = Set.empty
@@ -365,108 +369,109 @@ let PreProcessSolution(nugetIgnorePackages : string,
 
     for project in solution.Projects do
         let extension = Path.GetExtension(project.Value.Path).ToLower()
-
-        try
-            let msbuildproject =
-                let projects = ProjectCollection.GlobalProjectCollection.GetLoadedProjects(project.Value.Path)
+        if File.Exists(project.Value.Path) then 
+            printf "Handle %A \n" project.Value.Path
+            try
+                let msbuildproject =
+                    let projects = ProjectCollection.GlobalProjectCollection.GetLoadedProjects(project.Value.Path)
     
-                if projects.Count <> 0 then
-                    let data = projects.GetEnumerator();
-                    data.MoveNext() |> ignore
-                    data.Current
-                else
-                    if toolsVersion.StartsWith("14.0") || toolsVersion.StartsWith("15.0") then
-                        new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "14.0")
-                    elif toolsVersion.StartsWith("12.0") then
-                        new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "12.0")
+                    if projects.Count <> 0 then
+                        let data = projects.GetEnumerator();
+                        data.MoveNext() |> ignore
+                        data.Current
                     else
-                        new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "4.0")
+                        if toolsVersion.StartsWith("14.0") || toolsVersion.StartsWith("15.0") then
+                            new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "14.0")
+                        elif toolsVersion.StartsWith("12.0") then
+                            new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "12.0")
+                        else
+                            new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "4.0")
 
-            if extension = ".csproj" then
-                let outputType = match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("OutputType"))) with | Some value -> value.EvaluatedValue | _ -> ""
-                let name = match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("AssemblyName"))) with | Some value -> value.EvaluatedValue | _ -> ""
-
-                if outputType.ToLower() = "library" then
-                    project.Value.OutputPath <- name + ".dll"
-                else
-                    project.Value.OutputPath <- name + ".exe"
-                
-                for evaluatedType in msbuildproject.AllEvaluatedItems do 
-                    if evaluatedType.ItemType = "Reference" then
-                        let hintPath = match (evaluatedType.DirectMetadata |> Seq.tryFind (fun c -> c.Name.Equals("HintPath"))) with | Some value -> value.EvaluatedValue | _ -> ""
-                        if hintPath <> "" && not(hintPath.StartsWith(packagesBasePath)) then
-                            project.Value.DllReferences.Add(hintPath) |> ignore
-                        ()
-
-
-                project.Value.Type <- "cs"
-
-            if extension = ".vcxproj" then
-                printf "Handle %A \n" project.Value.Path
-                project.Value.Type <- "cpp"
-
-                project.Value.ImportLib <- match (msbuildproject.AllEvaluatedItemDefinitionMetadata |> Seq.tryFind (fun c -> c.Name.Equals("ImportLibrary"))) with | Some value -> value.EvaluatedValue | _ -> ""
-
-                project.Value.Keyword <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("Keyword"))) with | Some value -> value.EvaluatedValue | _ -> ""
-                project.Value.ConfigurationType <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("ConfigurationType"))) with | Some value -> value.EvaluatedValue | _ -> ""
-                project.Value.CLRSupport <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("CLRSupport"))) with | Some value -> value.EvaluatedValue | _ -> ""
-
-                if project.Value.CLRSupport <> "" then
+                if extension = ".csproj" then
+                    let outputType = match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("OutputType"))) with | Some value -> value.EvaluatedValue | _ -> ""
                     let name = match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("AssemblyName"))) with | Some value -> value.EvaluatedValue | _ -> ""
-                    project.Value.OutputPath <- name + ".dll"
+
+                    if outputType.ToLower() = "library" then
+                        project.Value.OutputPath <- name + ".dll"
+                    else
+                        project.Value.OutputPath <- name + ".exe"
+                
                     for evaluatedType in msbuildproject.AllEvaluatedItems do 
                         if evaluatedType.ItemType = "Reference" then
                             let hintPath = match (evaluatedType.DirectMetadata |> Seq.tryFind (fun c -> c.Name.Equals("HintPath"))) with | Some value -> value.EvaluatedValue | _ -> ""
                             if hintPath <> "" && not(hintPath.StartsWith(packagesBasePath)) then
                                 project.Value.DllReferences.Add(hintPath) |> ignore
+                            ()
 
-                project.Value.TargetPath <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("TargetPath"))) with | Some value -> value.EvaluatedValue | _ -> ""
 
-                project.Value.PlatformToolset <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("PlatformToolset"))) with | Some value -> value.EvaluatedValue | _ -> "v120"
-                project.Value.Platform <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("Platform"))) with | Some value -> value.EvaluatedValue | _ -> "Win32"
+                    project.Value.Type <- "cs"
 
-                let VC_IncludePath = match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("VC_IncludePath"))) with | Some value -> value.EvaluatedValue | _ -> ""
-                let WindowsSDK_IncludePath = match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("WindowsSDK_IncludePath"))) with | Some value -> value.EvaluatedValue | _ -> ""
+                if extension = ".vcxproj" then
+                
+                    project.Value.Type <- "cpp"
 
-                // figure out a way of getting those
-                // WindowsSDK_IncludePath
-                // VC_IncludePath
+                    project.Value.ImportLib <- match (msbuildproject.AllEvaluatedItemDefinitionMetadata |> Seq.tryFind (fun c -> c.Name.Equals("ImportLibrary"))) with | Some value -> value.EvaluatedValue | _ -> ""
 
-                for includeData in VC_IncludePath.Split([|';'; '\n'; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries) do
-                    if not(project.Value.SystemIncludeDirs.Contains(includeData)) then
-                        project.Value.SystemIncludeDirs.Add(includeData) |> ignore
+                    project.Value.Keyword <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("Keyword"))) with | Some value -> value.EvaluatedValue | _ -> ""
+                    project.Value.ConfigurationType <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("ConfigurationType"))) with | Some value -> value.EvaluatedValue | _ -> ""
+                    project.Value.CLRSupport <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("CLRSupport"))) with | Some value -> value.EvaluatedValue | _ -> ""
 
-                for includeData in WindowsSDK_IncludePath.Split([|';'; '\n'; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries) do
-                    if not(project.Value.SystemIncludeDirs.Contains(includeData)) then
-                        project.Value.SystemIncludeDirs.Add(includeData) |> ignore
+                    if project.Value.CLRSupport <> "" then
+                        let name = match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("AssemblyName"))) with | Some value -> value.EvaluatedValue | _ -> ""
+                        project.Value.OutputPath <- name + ".dll"
+                        for evaluatedType in msbuildproject.AllEvaluatedItems do 
+                            if evaluatedType.ItemType = "Reference" then
+                                let hintPath = match (evaluatedType.DirectMetadata |> Seq.tryFind (fun c -> c.Name.Equals("HintPath"))) with | Some value -> value.EvaluatedValue | _ -> ""
+                                if hintPath <> "" && not(hintPath.StartsWith(packagesBasePath)) then
+                                    project.Value.DllReferences.Add(hintPath) |> ignore
 
-                if not(Path.GetFileNameWithoutExtension(project.Value.Path).ToLower().Equals(project.Value.Name.ToLower())) then
-                    Helpers.AddWarning(project.Value.Path, "Project Path Does Not Match Output Path")
-                //    raise(ProjectTypes.IncorrectNameForProject("Post Project Incorrectly Named"))
+                    project.Value.TargetPath <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("TargetPath"))) with | Some value -> value.EvaluatedValue | _ -> ""
 
-                let props = msbuildproject.AllEvaluatedProperties
-                for importProj in msbuildproject.Imports do
-                    let importProj = importProj.ImportedProject.FullPath.ToLower().Replace("\\", "/")
-                    if importProj.StartsWith(packagesBasePath) then
-                        try
-                            let packageId = importProj.Replace(packagesBasePath + "/", "").Split('/').[0]
-                            let isFound = ignoredPackages |> Seq.tryFind (fun c -> packageId.ToLower().Contains(c.ToLower()))
-                            match isFound with
-                            | Some c -> ()
-                            | _ ->
-                                if not(project.Value.NugetReferences.Contains(packageId)) then
+                    project.Value.PlatformToolset <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("PlatformToolset"))) with | Some value -> value.EvaluatedValue | _ -> "v120"
+                    project.Value.Platform <- match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("Platform"))) with | Some value -> value.EvaluatedValue | _ -> "Win32"
+
+                    let VC_IncludePath = match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("VC_IncludePath"))) with | Some value -> value.EvaluatedValue | _ -> ""
+                    let WindowsSDK_IncludePath = match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("WindowsSDK_IncludePath"))) with | Some value -> value.EvaluatedValue | _ -> ""
+
+                    // figure out a way of getting those
+                    // WindowsSDK_IncludePath
+                    // VC_IncludePath
+
+                    for includeData in VC_IncludePath.Split([|';'; '\n'; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries) do
+                        if not(project.Value.SystemIncludeDirs.Contains(includeData)) then
+                            project.Value.SystemIncludeDirs.Add(includeData) |> ignore
+
+                    for includeData in WindowsSDK_IncludePath.Split([|';'; '\n'; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries) do
+                        if not(project.Value.SystemIncludeDirs.Contains(includeData)) then
+                            project.Value.SystemIncludeDirs.Add(includeData) |> ignore
+
+                    if not(Path.GetFileNameWithoutExtension(project.Value.Path).ToLower().Equals(project.Value.Name.ToLower())) then
+                        Helpers.AddWarning(project.Value.Path, "Project Path Does Not Match Output Path")
+                    //    raise(ProjectTypes.IncorrectNameForProject("Post Project Incorrectly Named"))
+
+                    let props = msbuildproject.AllEvaluatedProperties
+                    for importProj in msbuildproject.Imports do
+                        let importProj = importProj.ImportedProject.FullPath.ToLower().Replace("\\", "/")
+                        if importProj.StartsWith(packagesBasePath) then
+                            try
+                                let packageId = importProj.Replace(packagesBasePath + "/", "").Split('/').[0]
+                                let isFound = ignoredPackages |> Seq.tryFind (fun c -> packageId.ToLower().Contains(c.ToLower()))
+                                match isFound with
+                                | Some c -> ()
+                                | _ ->
+                                    if not(project.Value.NugetReferences.Contains(packageId)) then
                                         
-                                    project.Value.NugetReferences <- project.Value.NugetReferences.Add(packageId)
-                                    project.Value.Visible <- true
-                        with
-                        | ex -> ()
+                                        project.Value.NugetReferences <- project.Value.NugetReferences.Add(packageId)
+                                        project.Value.Visible <- true
+                            with
+                            | ex -> ()
 
-                HandleCppProjecItems(msbuildproject, project.Value, solution, packagesBasePath, processIncludes, detectHeaderCycles)
+                    HandleCppProjecItems(msbuildproject, project.Value, solution, packagesBasePath, processIncludes, detectHeaderCycles)
 
-                ProjectCollection.GlobalProjectCollection.UnloadProject(msbuildproject)
+                    ProjectCollection.GlobalProjectCollection.UnloadProject(msbuildproject)
 
-        with
-        | ex ->  printf "Failed to create node: %s %s %s\n" project.Value.Path ex.Message  ex.StackTrace
+            with
+            | ex ->  printf "Failed to create node: %s %s %s\n" project.Value.Path ex.Message  ex.StackTrace
 
     solution
 
@@ -835,7 +840,7 @@ let GetProjectFilePathForFile(projectPath : string, fileName : string) =
         else
              new Microsoft.Build.Evaluation.Project(projectPath)
 
-    let element = msbuildproject.Items |> Seq.tryFind (fun c -> fileName.ToLower().EndsWith(c.EvaluatedInclude.ToLower()))
+    let element = msbuildproject.Items |> Seq.tryFind (fun c -> Path.GetFileName(fileName).ToLower().Equals(Path.GetFileName(c.EvaluatedInclude).ToLower()))
     match element with
     | Some(c) -> c.EvaluatedInclude
     | _ -> ""

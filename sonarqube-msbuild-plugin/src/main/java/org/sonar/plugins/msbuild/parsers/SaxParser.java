@@ -1,4 +1,23 @@
 /*
+ * Sonar MSBuild Plugin :: Squid
+ * Copyright (C) 2015-2018 SonarSource SA
+ * mailto:info AT sonarsource DOT com
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+/*
  * Sonar MSBuild Plugin, open source software quality management tool.
  * Author(s) : Jorge Costa @ jmecsoftware.com
  * 
@@ -14,7 +33,6 @@
  */
 package org.sonar.plugins.msbuild.parsers;
 
-import org.sonar.api.utils.SonarException;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -34,6 +52,8 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Parse XML files and add linenumbers in the document.
@@ -203,17 +223,11 @@ public final class SaxParser extends AbstractParser {
     return lineNumber == null ? 0 : lineNumber;
   }
 
-  public void parse(InputStream input, DefaultHandler handler) {
+  public void parse(InputStream input, DefaultHandler handler) throws ParserConfigurationException, SAXException, IOException {
     SAXParser parser = newSaxParser();
-    try {
-      // read comments too, so use lexical handler.
-      parser.getXMLReader().setProperty("http://xml.org/sax/properties/lexical-handler", handler);
-      parser.parse(input, handler);
-    } catch (IOException e) {
-      throw new SonarException(e);
-    } catch (SAXException e) {
-      throw new SonarException(e);
-    }
+    // read comments too, so use lexical handler.
+    parser.getXMLReader().setProperty("http://xml.org/sax/properties/lexical-handler", handler);
+    parser.parse(input, handler);
   }
 
   public Document parseDocument(InputStream input, boolean namespaceAware) {
@@ -223,9 +237,7 @@ public final class SaxParser extends AbstractParser {
       LocationRecordingHandler handler = new LocationRecordingHandler(document);
       parse(input, handler);
       return document;
-    } catch (ParserConfigurationException e) {
-      return null;
-    } catch (SonarException e) {
+    } catch (ParserConfigurationException | SAXException | IOException e) {
       return null;
     }
   }
