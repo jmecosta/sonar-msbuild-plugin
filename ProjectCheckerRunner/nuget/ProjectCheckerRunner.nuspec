@@ -11,7 +11,7 @@
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>Standalone project checker</description>
         <releaseNotes>Initial Package.</releaseNotes>
-        <copyright>Copyright © 1992-2016 jmecsoftware.com</copyright>
+        <copyright>Copyright © 1992-2018 jmecsoftware.com</copyright>
         <tags></tags>
     </metadata>
     <files>

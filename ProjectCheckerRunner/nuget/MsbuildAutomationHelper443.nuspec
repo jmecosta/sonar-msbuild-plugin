@@ -1,17 +1,17 @@
 <?xml version="1.0"?>
 <package>
     <metadata>
-        <id>MsbuildAutomationHelper441</id>
-        <version>1.4.9</version>
+        <id>MsbuildAutomationHelper443</id>
+        <version>1.5.0</version>
         <authors>Jorge Costa</authors>
-        <owners>Trimble Solutions Corporation</owners>
-        <licenseUrl>https://github.com/TeklaCorp/sonar-msbuild-plugin/blob/master/LICENSE</licenseUrl>
-        <projectUrl>https://github.com/TeklaCorp/sonar-msbuild-plugin</projectUrl>
-        <iconUrl>https://github.com/TeklaCorp/sonar-msbuild-plugin/blob/master/Icon.ico</iconUrl>
+        <owners>jmecsoftware.com</owners>
+        <licenseUrl>https://github.com/jmecsoftware/sonar-msbuild-plugin/blob/master/LICENSE</licenseUrl>
+        <projectUrl>https://github.com/jmecsoftware/sonar-msbuild-plugin</projectUrl>
+        <iconUrl>https://github.com/jmecsoftware/sonar-msbuild-plugin/blob/master/Icon.ico</iconUrl>
         <requireLicenseAcceptance>false</requireLicenseAcceptance>
         <description>MSBuild Automation Helper to Support SonarQube MSBuild Plugin</description>
         <releaseNotes>Initial Package.</releaseNotes>
-        <copyright>Copyright © 1992-2015 Trimble Solutions Corporation and its licensors. All rights reserved.</copyright>
+        <copyright>Copyright © 1992-2018 jmecsoftware.com and its licensors. All rights reserved.</copyright>
         <tags></tags>
         <references>
             <reference file="MsbuildAutomationHelper.dll" />
