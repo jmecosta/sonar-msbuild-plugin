@@ -15,7 +15,7 @@ type MSBuildApiIncludesTests() =
     let assemblyRunningPath = Directory.GetParent(Assembly.GetExecutingAssembly().Location).ToString()
     
     let cppProjectFile = """<?xml version="1.0" encoding="utf-8"?>
-<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build" ToolsVersion="4.0">
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build" ToolsVersion="14.0">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -114,4 +114,4 @@ type MSBuildApiIncludesTests() =
         let Rule = new IncludeFolderNotUsedDuringInCompilation()
         let msbuildproject = new Microsoft.Build.Evaluation.Project(projectPath)
         (Rule :> RuleBase).ExecuteCheckMsbuild(msbuildproject, projectPath, Array.empty, "", "", List.Empty)
-        Assert.That((Rule :> RuleBase).GetIssues().Length, Is.EqualTo(6))
+        Assert.That((Rule :> RuleBase).GetIssues().Length, Is.EqualTo(2))
