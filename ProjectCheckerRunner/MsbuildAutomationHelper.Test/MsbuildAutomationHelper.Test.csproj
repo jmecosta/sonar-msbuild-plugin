@@ -74,12 +74,6 @@
     <Content Include="TestData\ConsoleApp\ConsoleApp\ConsoleApp.cpp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="TestData\ConsoleApp\ConsoleApp\ConsoleApp.vcxproj.user">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="TestData\ConsoleApp\ConsoleApp\ReadMe.txt">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="TestData\ConsoleApp\ConsoleApp\stdafx.cpp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
