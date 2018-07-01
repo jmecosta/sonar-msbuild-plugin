@@ -138,8 +138,7 @@ public class MSBuildDiagramCreatorSensor implements Sensor {
       appendLine(sb, "</Configuration>");
       
       File analysisInput = toolInput();
-      File analysisOutput = new File(fs.workDir(), "msbuild-diagram-output");
-      
+      File analysisOutput = new File(fs.workDir(), "msbuild-diagram-output");      
       
       MSBuildUtils.writeStringToFile(analysisInput.getAbsolutePath(), sb.toString());
       

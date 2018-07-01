@@ -26,7 +26,7 @@
     <DocumentationFile>$(ExtensionOutputPath)ProjectCheckerRunner.XML</DocumentationFile>
     <Prefer32Bit>true</Prefer32Bit>
     <StartAction>Project</StartAction>
-    <StartArguments>/d:d:\prod\extensions-ext\usa</StartArguments>
+    <StartArguments>/i:C:\prod\structures\Core\Common\.scannerwork\msbuild-analysis-input.xml /h:http://localhost:9000 /k:tekla.structures.core:Common /o:C:\prod\structures\Core\Common\.scannerwork\msbuild-analysis-output.xml /u:admin /p:admin</StartArguments>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -57,6 +57,7 @@
   </Choose>
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
+    <Compile Include="SonarHelpers.fs" />
     <Compile Include="SQRunner.fs" />
     <Compile Include="Program.fs" />
     <Content Include="packages.config" />
@@ -70,13 +71,13 @@
       <SpecificVersion>True</SpecificVersion>
       <Private>True</Private>
     </Reference>
-    <Reference Include="FSharp.Data, Version=$(TargetFSharpDataVersion), Culture=neutral, PublicKeyToken=a72e257822fd31b6">
-      <HintPath>..\References\$(TargetFSharpCoreVersion)\FSharp.Data.dll</HintPath>
+    <Reference Include="FSharp.Data, Version=3.0.0.0, Culture=neutral, PublicKeyToken=a72e257822fd31b6">
+      <HintPath>..\packages\VSSonarExtensionPlugin43Api.7.1.1\lib\FSharp.Data.dll</HintPath>
       <Private>True</Private>
       <SpecificVersion>True</SpecificVersion>
     </Reference>
-    <Reference Include="FSharp.Data.DesignTime, Version=$(TargetFSharpDataVersion), Culture=neutral, PublicKeyToken=a72e257822fd31b6">
-      <HintPath>..\References\$(TargetFSharpCoreVersion)\FSharp.Data.DesignTime.dll</HintPath>
+    <Reference Include="FSharp.Data.DesignTime, Version=3.0.0.0, Culture=neutral, PublicKeyToken=a72e257822fd31b6">
+      <HintPath>..\References\VSSonarExtensionPlugin43Api.7.1.1\FSharp.Data.DesignTime.dll</HintPath>
       <Private>True</Private>
       <SpecificVersion>True</SpecificVersion>
     </Reference>
@@ -84,22 +85,32 @@
     <Reference Include="Microsoft.Build.Framework" />
     <Reference Include="Microsoft.Build.Tasks.v4.0" />
     <Reference Include="Microsoft.Build.Utilities.v4.0" />
+    <Reference Include="MsbuildAutomationHelper">
+      <HintPath>..\packages\VSSonarExtensionPlugin43Api.7.1.1\lib\MsbuildAutomationHelper.dll</HintPath>
+    </Reference>
     <Reference Include="mscorlib" />
+    <Reference Include="RestSharp">
+      <HintPath>..\packages\VSSonarExtensionPlugin43Api.7.1.1\lib\RestSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="SonarRestService">
+      <HintPath>..\packages\VSSonarExtensionPlugin43Api.7.1.1\lib\SonarRestService.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
-    <ProjectReference Include="..\MsbuildAutomationHelper\MsbuildAutomationHelper.fsproj">
-      <Name>MsbuildAutomationHelper</Name>
-      <Project>{49f98a4d-da45-4e7a-8e37-70d62a036283}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\ProjectCheckerTask\ProjectCheckerTask.fsproj">
       <Name>ProjectCheckerTask</Name>
       <Project>{f02e14b7-f4cd-430f-9078-b3f06a67c404}</Project>
       <Private>True</Private>
     </ProjectReference>
+    <Reference Include="VSSonarPlugins">
+      <HintPath>..\packages\VSSonarExtensionPlugin43Api.7.1.1\lib\VSSonarPlugins.dll</HintPath>
+    </Reference>
+    <Reference Include="VSSonarQubeCmdExecutor">
+      <HintPath>..\packages\VSSonarExtensionPlugin43Api.7.1.1\lib\VSSonarQubeCmdExecutor.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

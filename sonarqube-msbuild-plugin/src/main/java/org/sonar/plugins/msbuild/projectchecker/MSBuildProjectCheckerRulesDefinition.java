@@ -26,8 +26,8 @@ import org.sonar.plugins.msbuild.MSBuildLanguage;
 
 public class MSBuildProjectCheckerRulesDefinition implements RulesDefinition {
 
-  public static final String REPOSITORY_KEY = "tekla-msbuild-guideline";
-  public static final String REPOSITORY_NAME = "Tekla";
+  public static final String REPOSITORY_KEY = "msbuildsquid";
+  public static final String REPOSITORY_NAME = "Msbuild";
   
   @Override
   public void define(Context context) {

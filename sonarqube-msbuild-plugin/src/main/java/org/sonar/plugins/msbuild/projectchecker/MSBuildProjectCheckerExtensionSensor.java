@@ -63,6 +63,7 @@ import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Level;
 import org.sonar.api.batch.sensor.SensorDescriptor;
 import org.sonar.api.batch.sensor.issue.NewIssue;
 import org.sonar.api.batch.sensor.issue.NewIssueLocation;
@@ -104,11 +105,23 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
 
   @Override
   public void execute(SensorContext context) {
-    analyze();
-    importResults(context);
+    analyze(context);
+    try {
+      importResults(context);
+    } catch (IOException | XMLStreamException ex) {
+      LOG.error("Failed to execute sensor '{0}' msbuild checks are not going to be available", ex.getMessage());
+    }
   }
   
-  private void analyze() {       
+  private String getEmptyStringOrValue(SensorContext ctx, String key) {
+    if (ctx.config().get(key).isPresent()) {
+      return ctx.config().get(key).get();
+    }
+    
+    return "";    
+  }
+    
+  private void analyze(SensorContext context) {       
     try {       
       String projectRoot = fs.workDir().getCanonicalPath();
       
@@ -169,19 +182,36 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
       File executableFile = extractor.projectCheckerFile(projectRoot);
       LOG.info("Using ProjectChecker from:" + executableFile.getCanonicalPath());
       
+      String username = getEmptyStringOrValue(context, "sonar.login");
+      String password = getEmptyStringOrValue(context, "sonar.password");
+      
+
+      String host = getEmptyStringOrValue(context, "sonar.host.url");
+      String projectKey = context.config().get("sonar.projectKey").get();
+    
       Command command;
       if (OsUtils.isWindows()) {
         command = Command.create(executableFile.getAbsolutePath())
                 .addArgument("/i:" + analysisInput.getAbsolutePath())
+                .addArgument("/h:" + host)
+                .addArgument("/k:" + projectKey)
                 .addArgument("/o:" + analysisOutput.getAbsolutePath());
       } else {
         command = Command.create("mono")
                 .addArgument(executableFile.getAbsolutePath())
                 .addArgument("/i:" + analysisInput.getAbsolutePath())
+                .addArgument("/h:" + host)                
+                .addArgument("/k:" + projectKey)
                 .addArgument("/o:" + analysisOutput.getAbsolutePath());
       }
       
-      LOG.debug(command.toCommandLine());
+      command.addArgument("/u:" + username);
+      LOG.info(command.toCommandLine());
+      
+      if (!password.equals("")){
+        command.addArgument("/p:" + password);
+      } 
+      
       CommandExecutor.create().execute(command, new LogInfoStreamConsumer(), new LogErrorStreamConsumer(), Integer.MAX_VALUE);
     } catch (IOException ex) {
         String msg = new StringBuilder()
@@ -213,7 +243,7 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
     return builder;
   }
 
-  private void importResults(SensorContext context) {
+  private void importResults(SensorContext context) throws IOException, XMLStreamException {
     File analysisOutput = toolOutput();
 
     new AnalysisResultImporter(context, fileLinesContextFactory, noSonarFilter).parse(analysisOutput, context);
@@ -236,7 +266,7 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
       this.noSonarFilter = noSonarFilter;
     }
 
-    public void parse(File file, SensorContext context) {
+    public void parse(File file, SensorContext context) throws IOException, XMLStreamException {
       InputStreamReader reader = null;
       XMLInputFactory xmlFactory = XMLInputFactory.newInstance();
 
@@ -258,6 +288,7 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
       } catch (IOException | XMLStreamException e) {        
         closeXmlStream();
         LOG.error("Not able to parse file : {0}", e.getMessage());
+        throw e; 
       }      
     }
 

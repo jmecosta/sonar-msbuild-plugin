@@ -87,22 +87,24 @@ let parseArgs (args:string seq) =
 
 let ShowHelp () =
         Console.WriteLine ("Usage: FsSonarRunner [OPTIONS]")
-        Console.WriteLine ("Collects results for Sonar Analsyis using FSharpLint")
+        Console.WriteLine ("Collects results for Sonar Analsyis using MSBuild Scanner")
         Console.WriteLine ()
         Console.WriteLine ("Options:")
         Console.WriteLine ("    /I|/i:<input xml>")
         Console.WriteLine ("    /F|/f:<analyse single file>")
+        Console.WriteLine ("    /U|/u:<username>")
+        Console.WriteLine ("    /P|/p:<password>")
+        Console.WriteLine ("    /H|/h:<host>")
         Console.WriteLine ("    /O|/o:<output xml file>")
         Console.WriteLine ("    /D|/d:<directory to analyse>")
         Console.WriteLine ("    /displayrules")
 
 [<EntryPoint>]
 let main argv = 
-    printfn "%A" argv
     let arguments = parseArgs(argv)
     let mutable failed = false
     
-    if arguments.ContainsKey("h") then
+    if arguments.Count = 0 then
         ShowHelp()
     elif arguments.ContainsKey("f") then
         let mutable input = arguments.["f"] |> Seq.head
@@ -124,11 +126,34 @@ let main argv =
             ShowHelp()
         else
             try
+                let projectKey =
+                    if arguments.ContainsKey("k") then
+                        arguments.["k"] |> Seq.head
+                    else
+                        ""
+
+                let username =
+                    if arguments.ContainsKey("u") then
+                        arguments.["u"] |> Seq.head
+                    else
+                        ""
+                let password = 
+                    if arguments.ContainsKey("p") then
+                        arguments.["p"] |> Seq.head
+                    else
+                        ""
+
+                let hostname =
+                    if arguments.ContainsKey("h") then
+                        arguments.["h"] |> Seq.head
+                    else
+                        "http://localhost:9000"
+
                 let input = arguments.["i"] |> Seq.head
                 let output = arguments.["o"] |> Seq.head
                 let options = InputXml.Parse(File.ReadAllText(input))
 
-                let analyser = new SQAnalyser()                
+                let analyser = new SQAnalyser()
                 let basePath = (options.Settings |> Seq.find (fun c -> c.Key.Equals("ProjectRoot"))).Value
                 let ingoreFolders = (options.Settings |> Seq.find (fun c -> c.Key.Equals("sonar.msbuild.include.folder.ignores"))).Value
                 let rules = options.Settings |> Seq.find (fun c -> c.Key.Equals("sonar.msbuild.projectchecker.customrules"))
@@ -137,9 +162,9 @@ let main argv =
                     for dllPath in rules.Value.Split(';') do
                         printf "    External Analysers: %A\n" dllPath
                         if Path.IsPathRooted(dllPath) then
-                            analyser.AddExternalAnalyser(dllPath)
+                            analyser.AddExternalAnalyser(dllPath, hostname, username, password, projectKey)
                         else 
-                            analyser.AddExternalAnalyser(Path.Combine(basePath, dllPath))
+                            analyser.AddExternalAnalyser(Path.Combine(basePath, dllPath), hostname, username, password, projectKey)
 
                 if ingoreFolders <> "" then
                     for folder in ingoreFolders.Split(';') do

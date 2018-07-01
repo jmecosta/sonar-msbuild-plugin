@@ -8,7 +8,7 @@
   <includeBaseDirectory>false</includeBaseDirectory>
   <fileSets>
     <fileSet>
-      <directory>BuildDrop/vs15</directory>
+      <directory>BuildDrop/vs17</directory>
       <outputDirectory>/</outputDirectory>
       <includes>
         <include>*.dll</include>

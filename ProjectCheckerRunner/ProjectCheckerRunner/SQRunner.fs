@@ -8,6 +8,8 @@ open System.Xml.Linq
 open RuleBase
 open ProjectTypes
 open ProjectCheckerTask
+open VSSonarPlugins
+open SonarRestService
 
 type SQAnalyser() =
             
@@ -17,9 +19,15 @@ type SQAnalyser() =
     let resourcesLocker = new System.Object()
     let mutable foundErrors = false
 
-    member this.AddExternalAnalyser(path : string) =  
+    member this.AddExternalAnalyser(path : string, host:string, user:string, pass:string, projectKey:string) =  
         if path <> "" then
             if File.Exists(path) then
+                let checks = MSBuildHelper.LoadChecksFromPath(path)
+                printf "Checks %A" checks
+                let rest = SonarRestService(new JsonSonarConnector()) :> ISonarRestService
+                let token = SonarHelpers.GetConnectionToken(rest, host, user, pass)
+                SonarHelpers.SyncRulesInServer(path, rest, token, projectKey)
+
                 externalDlls <- externalDlls @ [path]
             else
                 raise(new Exception("External Path Does Not Exist: " + path))
@@ -28,9 +36,8 @@ type SQAnalyser() =
         if Directory.Exists(path) then
             ingoreFolder <- ingoreFolder @ [path]
         else
-            raise(new Exception("Include folder to ignore does Not Exist: " + path))
+            printf "[Error] path %A not found, using default checks" path
 
-            
     member this.RunAnalysesForOutput(path : string) =  
         let analyser = new ProjectCheckerTask()
         analyser.ExecuteAnalysisOnProjectFile(path, "")
@@ -38,14 +45,14 @@ type SQAnalyser() =
 
     member this.RunAnalyses(path : string) =  
         let resourceMetric = SonarResoureMetrics(path)
-        resourceMetric.Issues <- this.RunTool(path)       
+        resourceMetric.Issues <- this.RunTool(path)
         lock resourcesLocker (fun () -> resources <- resources @ [resourceMetric] )
 
     member this.RunTool(path : string) = 
         try
             let analyser = new ProjectCheckerTask()
             analyser.ExternalDlls <- externalDlls
-            analyser.IncludeFoldersToIgnore <- ingoreFolder            
+            analyser.IncludeFoldersToIgnore <- ingoreFolder
             analyser.ExecuteAnalysisOnProjectFile(path, "")
             analyser.GetAllIssues()
         with
@@ -85,6 +92,7 @@ type SQAnalyser() =
         xmlOut.WriteStartElement("Files") // 2
 
         for resource in resources do
+            printf "Resource %s has %i issues \r\n" resource.ResourcePath resource.Issues.Length
             xmlOut.WriteStartElement("File") // 3
             xmlOut.WriteElementString("Path", resource.ResourcePath)
 

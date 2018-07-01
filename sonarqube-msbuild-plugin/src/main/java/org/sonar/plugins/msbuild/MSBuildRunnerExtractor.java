@@ -113,13 +113,13 @@ public class MSBuildRunnerExtractor {
 
     try {
 
-      LOG.error("Unzip File: {} => {}", N_PROJECT_ZIP, fileName);
+      LOG.info("Unzip File: {} => {}", N_PROJECT_ZIP, toolWorkingDir.getAbsolutePath());
       try (InputStream is = getClass().getResourceAsStream("/" + N_PROJECT_ZIP)) {
         Files.copy(is, zipFile.toPath());
       }
 
       UnZip unZip = new UnZip();
-      unZip.unZipIt(zipFile.getAbsolutePath(),toolWorkingDir.getAbsolutePath());
+      unZip.unZipIt(zipFile.getAbsolutePath(), toolWorkingDir.getAbsolutePath());
         
       return new File(toolWorkingDir, fileName);
     } catch (IOException e) {
