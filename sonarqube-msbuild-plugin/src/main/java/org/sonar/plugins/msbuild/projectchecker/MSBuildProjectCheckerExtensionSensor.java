@@ -100,7 +100,7 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
 
   @Override
   public void describe(SensorDescriptor descriptor) {
-    descriptor.onlyOnLanguage(MSBuildLanguage.KEY).name("MSBuildProjectCheckerExtensionSensor");
+    descriptor.global().name("MSBuildProjectCheckerExtensionSensor");
   }
 
   @Override
@@ -123,7 +123,8 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
     
   private void analyze(SensorContext context) {       
     try {       
-      String projectRoot = fs.workDir().getCanonicalPath();
+      String workdirRoot = context.fileSystem().workDir().getCanonicalPath();
+      String projectRoot = context.fileSystem().baseDir().getCanonicalPath();
       
       StringBuilder sb = new StringBuilder();
       appendLine(sb, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
@@ -179,7 +180,7 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
         throw e;
       }
       
-      File executableFile = extractor.projectCheckerFile(projectRoot);
+      File executableFile = extractor.projectCheckerFile(workdirRoot);
       LOG.info("Using ProjectChecker from:" + executableFile.getCanonicalPath());
       
       String username = getEmptyStringOrValue(context, "sonar.login");

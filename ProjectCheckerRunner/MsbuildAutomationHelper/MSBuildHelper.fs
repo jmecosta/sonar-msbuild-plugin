@@ -839,13 +839,17 @@ let GetProjectFilePathForFile(projectPath : string, fileName : string) =
             data.Current
         else
              new Microsoft.Build.Evaluation.Project(projectPath)
+    let fileNameLower = Path.GetFileName(fileName).ToLower()
+    let TryFindPath(evaluatedInclude:string) = 
+        try
+            fileNameLower.Equals(Path.GetFileName(evaluatedInclude).ToLower())
+        with
+        | ex -> false
 
-    let element = msbuildproject.Items |> Seq.tryFind (fun c -> Path.GetFileName(fileName).ToLower().Equals(Path.GetFileName(c.EvaluatedInclude).ToLower()))
+    let element = msbuildproject.Items |> Seq.tryFind (fun c -> TryFindPath(c.EvaluatedInclude))
     match element with
     | Some(c) -> c.EvaluatedInclude
     | _ -> ""
-
-
 
 let GetIncludeGraphForFile(pathInput : string, project : ProjectTypes.Project) =
     let fileNameLower = Path.GetFileName(pathInput).ToLower()

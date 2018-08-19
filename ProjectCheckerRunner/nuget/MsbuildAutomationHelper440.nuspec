@@ -2,7 +2,7 @@
 <package>
     <metadata>
         <id>MsbuildAutomationHelper440</id>
-        <version>1.5.0</version>
+        <version>1.5.2</version>
         <authors>Jorge Costa</authors>
         <owners>jmecsoftware.com</owners>
         <licenseUrl>https://github.com/jmecsoftware/sonar-msbuild-plugin/blob/master/LICENSE</licenseUrl>
