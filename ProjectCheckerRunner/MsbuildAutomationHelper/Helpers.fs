@@ -1,10 +1,7 @@
 ﻿module Helpers
 
 open System.IO
-open System.Text
 open System.Text.RegularExpressions
-open System.Collections.Generic
-open System.Collections
 
 // Define an immutable stack
 type ImmutableStack<'T> =

@@ -220,7 +220,8 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
           .append(ex)
           .append("'")
           .toString();
-        throw new IllegalStateException(msg, ex);
+        
+        LOG.error(msg);
     }
   }
 

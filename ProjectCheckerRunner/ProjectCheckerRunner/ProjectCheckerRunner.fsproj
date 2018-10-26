@@ -13,6 +13,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Name>ProjectCheckerRunner</Name>
     <TargetFrameworkProfile />
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -85,9 +86,6 @@
     <Reference Include="Microsoft.Build.Framework" />
     <Reference Include="Microsoft.Build.Tasks.v4.0" />
     <Reference Include="Microsoft.Build.Utilities.v4.0" />
-    <Reference Include="MsbuildAutomationHelper">
-      <HintPath>..\packages\VSSonarExtensionPlugin43Api.7.1.1\lib\MsbuildAutomationHelper.dll</HintPath>
-    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="RestSharp">
       <HintPath>..\packages\VSSonarExtensionPlugin43Api.7.1.1\lib\RestSharp.dll</HintPath>
@@ -100,6 +98,11 @@
     <Reference Include="System.Numerics" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
+    <ProjectReference Include="..\MsbuildAutomationHelper\MsbuildAutomationHelper.fsproj">
+      <Name>MsbuildAutomationHelper</Name>
+      <Project>{49f98a4d-da45-4e7a-8e37-70d62a036283}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\ProjectCheckerTask\ProjectCheckerTask.fsproj">
       <Name>ProjectCheckerTask</Name>
       <Project>{f02e14b7-f4cd-430f-9078-b3f06a67c404}</Project>

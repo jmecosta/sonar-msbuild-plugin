@@ -10,7 +10,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>ProjectCheckerTask.Test</RootNamespace>
     <AssemblyName>ProjectCheckerTask.Test</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <Name>ProjectCheckerTask.Test</Name>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\</SolutionDir>
     <NuGetPackageImportStamp>
