@@ -166,7 +166,7 @@ public class MSBuildDiagramCreatorSensor implements Sensor {
           .append(ex)
           .append("'")
           .toString();
-        throw new IllegalStateException(msg, ex);
+        LOG.error(msg);        
     }
   }
 
