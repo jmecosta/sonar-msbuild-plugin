@@ -99,9 +99,12 @@ public class MSBuildDiagramCreatorSensor implements Sensor {
         LOG.debug("Runs Diagram Creator only at top level project skip : Module Key = '{}'", moduleKey);
         return;        
     }
-        
-    analyze();
-    importResults(context);
+    try {
+      analyze();
+      importResults(context);
+    } catch (Exception ex) {
+      LOG.warn("Failed to execute sensor '{0}' msbuild checks are not going to be available", ex.getMessage());
+    } 
   }
 
   private void analyze() {       
@@ -166,7 +169,8 @@ public class MSBuildDiagramCreatorSensor implements Sensor {
           .append(ex)
           .append("'")
           .toString();
-        LOG.error(msg);        
+        LOG.info("Diagram Creator failed to execute, will skip");
+        LOG.warn(msg);
     }
   }
 

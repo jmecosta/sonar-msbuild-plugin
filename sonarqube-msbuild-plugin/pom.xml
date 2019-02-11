@@ -11,7 +11,7 @@
 
   <groupId>jmecsoftware.sonarqube.msbuild</groupId>
   <artifactId>sonarqube-msbuild-plugin</artifactId>
-  <version>1.5.2</version>
+  <version>1.5.5</version>
   <packaging>sonar-plugin</packaging>
   
   <name>Sonar MSBuild Plugin :: Squid</name>

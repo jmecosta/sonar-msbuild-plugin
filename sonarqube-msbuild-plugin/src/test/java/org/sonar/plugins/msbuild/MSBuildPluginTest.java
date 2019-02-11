@@ -38,7 +38,6 @@ import org.junit.Test;
 import org.sonar.api.Plugin;
 import org.sonar.api.SonarProduct;
 import org.sonar.api.SonarQubeSide;
-import org.sonar.api.SonarQubeVersion;
 import org.sonar.api.SonarRuntime;
 import org.sonar.api.utils.Version;
 
@@ -64,6 +63,6 @@ public class MSBuildPluginTest {
    });
    MSBuildPlugin plugin = new MSBuildPlugin();
    plugin.define(context);
-   assertEquals(23, context.getExtensions().size());
+   assertEquals(24, context.getExtensions().size());
   }
 }

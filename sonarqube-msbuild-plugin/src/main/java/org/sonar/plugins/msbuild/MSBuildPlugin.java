@@ -52,6 +52,16 @@ public final class MSBuildPlugin implements Plugin {
      
   private static List<PropertyDefinition> MsbuildProperties() {
     return new ArrayList<>(Arrays.asList(
+      PropertyDefinition.builder(MSBuildProjectCheckerExtensionSensor.CHECKER_ENABLED)
+        .defaultValue("False")
+        .name("Project Checker enabled")
+        .description("Disables Project Checker creator")
+        .category("Msbuild")
+        .subCategory("ProjectChecker")
+        .onQualifiers(Qualifiers.PROJECT)
+        .type(PropertyType.BOOLEAN)
+        .build(),
+            
       PropertyDefinition.builder(MSBuildPlugin.FILE_SUFFIXES_KEY)
         .name("File suffixes")
         .description("Comma-separated list of suffixes for files to analyze.")
@@ -89,7 +99,7 @@ public final class MSBuildPlugin implements Plugin {
       .build(),
             
       PropertyDefinition.builder(MSBuildDiagramCreatorSensor.DIAGRAM_CREATOR_ENABLED)
-        .defaultValue("True")
+        .defaultValue("False")
         .name("Diagram creator enabled")
         .description("Disables diagram creator")
         .category("Msbuild")

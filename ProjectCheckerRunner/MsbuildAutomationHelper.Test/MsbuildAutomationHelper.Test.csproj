@@ -63,9 +63,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MsbuildAutomationHelper\MsbuildAutomationHelper.fsproj">
+    <ProjectReference Include="..\MsbuildAutomationHelper\Signed\MsbuildAutomationHelperSigned.fsproj">
       <Project>{49f98a4d-da45-4e7a-8e37-70d62a036283}</Project>
-      <Name>MsbuildAutomationHelper</Name>
+      <Name>MsbuildAutomationHelperSigned</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

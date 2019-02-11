@@ -87,7 +87,8 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
 
   public static final String EXTERNAL_CUSTOM_RULES = "sonar.msbuild.projectchecker.customrules";
   public static final String PROJECT_CHECKER_PATH = "sonar.msbuild.prjectChecker.Path";
-     
+  public static String CHECKER_ENABLED = "sonar.msbuild.projectchecker.enabled";
+  
   public MSBuildProjectCheckerExtensionSensor(Configuration settings, MSBuildRunnerExtractor extractor, FileSystem fs, FileLinesContextFactory fileLinesContextFactory,
     NoSonarFilter noSonarFilter, RulesProfile ruleProfile) {
     this.settings = settings;
@@ -105,11 +106,16 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
 
   @Override
   public void execute(SensorContext context) {
-    analyze(context);
+    if (!settings.getBoolean(CHECKER_ENABLED).get()) {
+      LOG.info("Project Checker Skipped - Disabled");
+      return;
+    } 
+    
     try {
+      analyze(context);
       importResults(context);
-    } catch (IOException | XMLStreamException ex) {
-      LOG.error("Failed to execute sensor '{0}' msbuild checks are not going to be available", ex.getMessage());
+    } catch (Exception ex) {
+      LOG.warn("Failed to execute sensor '{0}' msbuild checks are not going to be available", ex.getMessage());
     }
   }
   
@@ -219,9 +225,9 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
           .append("Cannot execute project checker, details: '")
           .append(ex)
           .append("'")
-          .toString();
-        
-        LOG.error(msg);
+          .toString();        
+        LOG.info("Project Checker failed to execute, will skip");
+        LOG.warn(msg);
     }
   }
 
