@@ -172,8 +172,13 @@ let main argv =
                         else 
                             analyser.AddIgnoreIncludeFolder(Path.GetFullPath(Path.Combine(basePath, folder)))
 
-                                
-                options.Files |> Array.Parallel.map (fun file -> if File.Exists(file) then analyser.RunAnalyses(file)) |> ignore
+                let HandleFileToAnalyse(file) = 
+                    if File.Exists(file) then
+                        analyser.RunAnalyses(file)
+                    else
+                        printf "    [ProjectCheckerRunner] [Error]: %s not found \r\n" file
+
+                options.Files |> Array.Parallel.map (fun file -> HandleFileToAnalyse(file)) |> ignore
                 analyser.WriteXmlToDisk(output)
             with
             | ex -> printf "    Failed: %A \r\n %A" ex.Message ex.StackTrace

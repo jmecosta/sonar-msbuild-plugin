@@ -159,7 +159,7 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
       appendLine(sb, "  </Rules>");
       appendLine(sb, "  <Files>");
       for (InputFile file : filesToAnalyze()) {
-        appendLine(sb, "    <File>" + file.filename() + "</File>");
+        appendLine(sb, "    <File>" + file.uri() + "</File>");
       }
       appendLine(sb, "  </Files>");
       appendLine(sb, "</AnalysisInput>");
