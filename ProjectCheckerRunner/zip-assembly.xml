@@ -8,7 +8,7 @@
   <includeBaseDirectory>false</includeBaseDirectory>
   <fileSets>
     <fileSet>
-      <directory>BuildDrop/vs17</directory>
+      <directory>BuildDrop\ProjectCheckerRunner\net472</directory>
       <outputDirectory>/</outputDirectory>
       <includes>
         <include>*.dll</include>
