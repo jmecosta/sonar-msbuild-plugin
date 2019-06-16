@@ -52,7 +52,7 @@ import org.sonar.plugins.msbuild.utils.MSBuildUtils;
  * Modified to fit msbuild files
  */
 public final class MSBuildLineCounterSensor implements Sensor {
-  public static final Logger LOG = Loggers.get(MSBuildLineCounterSensor.class);
+  private static final Logger LOG = Loggers.get(MSBuildLineCounterSensor.class);
     
   @Override
   public String toString() {
@@ -77,7 +77,7 @@ public final class MSBuildLineCounterSensor implements Sensor {
     int numBlankLines = 0;
 
     try {
-      String [] lines = MSBuildUtils.readLines(file.absolutePath());
+      String [] lines = MSBuildUtils.readLines(file.filename());
       
       for (String line : lines) {
         numLines++;
@@ -86,16 +86,16 @@ public final class MSBuildLineCounterSensor implements Sensor {
         }        
       }
     } catch (IOException e) {
-      LOG.warn("Unable to count lines for file: " + file.absolutePath());
+      LOG.warn("Unable to count lines for file: " + file.filename());
       LOG.warn("Cause: {}", e);
     }
 
     try {
 
-      LOG.debug("Count comment in " + file.absolutePath());
+      LOG.debug("Count comment in " + file.filename());
 
       MSBuildLineCountParser lineCountParser = new MSBuildLineCountParser();
-      int numCommentLines = lineCountParser.countLinesOfComment(new FileInputStream(file.absolutePath()), file);
+      int numCommentLines = lineCountParser.countLinesOfComment(new FileInputStream(file.filename()), file);
       sensorContext.<Integer>newMeasure()
          .forMetric(CoreMetrics.COMMENT_LINES)
          .on(file)

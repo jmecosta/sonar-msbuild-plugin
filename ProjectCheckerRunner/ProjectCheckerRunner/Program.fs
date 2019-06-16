@@ -7,7 +7,6 @@ open System.Text.RegularExpressions
 open System.Xml.Linq
 open FSharp.Data
 open ProjectCheckerTask
-open FSharp.Collections.ParallelSeq
 
 type InputXml = XmlProvider<""" 
 <AnalysisInput>
@@ -174,8 +173,7 @@ let main argv =
                             analyser.AddIgnoreIncludeFolder(Path.GetFullPath(Path.Combine(basePath, folder)))
 
                                 
-                options.Files |> PSeq.iter  (fun c -> if File.Exists(c) then analyser.RunAnalyses(c))
-                
+                options.Files |> Array.Parallel.map (fun file -> if File.Exists(file) then analyser.RunAnalyses(file)) |> ignore
                 analyser.WriteXmlToDisk(output)
             with
             | ex -> printf "    Failed: %A \r\n %A" ex.Message ex.StackTrace

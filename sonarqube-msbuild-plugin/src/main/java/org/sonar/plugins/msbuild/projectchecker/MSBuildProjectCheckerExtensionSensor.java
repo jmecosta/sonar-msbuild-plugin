@@ -35,14 +35,8 @@ package org.sonar.plugins.msbuild.projectchecker;
 
 import org.sonar.api.batch.fs.FileSystem;
 import org.sonar.api.batch.fs.InputFile;
-import org.sonar.api.issue.NoSonarFilter;
-import org.sonar.api.measures.FileLinesContextFactory;
-import org.sonar.api.profiles.RulesProfile;
+import org.sonar.api.batch.rule.ActiveRule;
 import org.sonar.api.rule.RuleKey;
-import org.sonar.api.rules.ActiveRule;
-import org.sonar.api.rules.ActiveRuleParam;
-import org.sonar.api.rules.Rule;
-import org.sonar.api.rules.RuleParam;
 import org.sonar.api.utils.command.Command;
 import org.sonar.api.utils.command.CommandExecutor;
 import org.sonar.api.utils.command.StreamConsumer;
@@ -60,10 +54,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.logging.Level;
 import org.sonar.api.batch.sensor.SensorDescriptor;
 import org.sonar.api.batch.sensor.issue.NewIssue;
 import org.sonar.api.batch.sensor.issue.NewIssueLocation;
@@ -76,27 +70,23 @@ import org.sonar.plugins.msbuild.utils.MSBuildUtils;
 
 public class MSBuildProjectCheckerExtensionSensor implements Sensor {
 
-  public static final Logger LOG = Loggers.get(MSBuildProjectCheckerExtensionSensor.class);
+  private static final Logger LOG = Loggers.get(MSBuildProjectCheckerExtensionSensor.class);
 
   private final Configuration settings;
   private final MSBuildRunnerExtractor extractor;
   private final FileSystem fs;
-  private final FileLinesContextFactory fileLinesContextFactory;
-  private final NoSonarFilter noSonarFilter;
-  private final RulesProfile ruleProfile;
 
   public static final String EXTERNAL_CUSTOM_RULES = "sonar.msbuild.projectchecker.customrules";
   public static final String PROJECT_CHECKER_PATH = "sonar.msbuild.prjectChecker.Path";
   public static String CHECKER_ENABLED = "sonar.msbuild.projectchecker.enabled";
   
-  public MSBuildProjectCheckerExtensionSensor(Configuration settings, MSBuildRunnerExtractor extractor, FileSystem fs, FileLinesContextFactory fileLinesContextFactory,
-    NoSonarFilter noSonarFilter, RulesProfile ruleProfile) {
+  public MSBuildProjectCheckerExtensionSensor(
+          Configuration settings,
+          MSBuildRunnerExtractor extractor,
+          FileSystem fs) {
     this.settings = settings;
     this.extractor = extractor;
     this.fs = fs;
-    this.fileLinesContextFactory = fileLinesContextFactory;
-    this.noSonarFilter = noSonarFilter;
-    this.ruleProfile = ruleProfile;
   }
 
   @Override
@@ -106,7 +96,7 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
 
   @Override
   public void execute(SensorContext context) {
-    if (!settings.getBoolean(CHECKER_ENABLED).get()) {
+    if (!settings.getBoolean(CHECKER_ENABLED).isPresent()) {
       LOG.info("Project Checker Skipped - Disabled");
       return;
     } 
@@ -150,12 +140,10 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
       appendLine(sb, "    </Setting>");
       appendLine(sb, "  </Settings>");
       appendLine(sb, "  <Rules>");
-      for (ActiveRule activeRule : ruleProfile.getActiveRulesByRepository(MSBuildProjectCheckerRulesDefinition.REPOSITORY_KEY)) {
+      for (ActiveRule activeRule : context.activeRules().findByRepository(MSBuildProjectCheckerRulesDefinition.REPOSITORY_KEY)) {
         appendLine(sb, "    <Rule>");
-        Rule template = activeRule.getRule().getTemplate();
-        String ruleKey = template == null ? activeRule.getRuleKey() : template.getKey();
-        appendLine(sb, "      <Key>" + ruleKey + "</Key>");
         Map<String, String> parameters = effectiveParameters(activeRule);
+        appendLine(sb, "      <Key>" + parameters.get("RuleKey") + "</Key>");
         if (!parameters.isEmpty()) {
           appendLine(sb, "      <Parameters>");
           for (Entry<String, String> parameter : parameters.entrySet()) {
@@ -170,8 +158,8 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
       }
       appendLine(sb, "  </Rules>");
       appendLine(sb, "  <Files>");
-      for (File file : filesToAnalyze()) {
-        appendLine(sb, "    <File>" + file.getAbsolutePath() + "</File>");
+      for (InputFile file : filesToAnalyze()) {
+        appendLine(sb, "    <File>" + file.filename() + "</File>");
       }
       appendLine(sb, "  </Files>");
       appendLine(sb, "</AnalysisInput>");
@@ -194,6 +182,9 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
       
 
       String host = getEmptyStringOrValue(context, "sonar.host.url");
+      if(!context.config().get("sonar.projectKey").isPresent()) {
+        LOG.info("ProjectChecker Skipped because projectKey not available...");
+      }
       String projectKey = context.config().get("sonar.projectKey").get();
     
       Command command;
@@ -221,31 +212,20 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
       
       CommandExecutor.create().execute(command, new LogInfoStreamConsumer(), new LogErrorStreamConsumer(), Integer.MAX_VALUE);
     } catch (IOException ex) {
-        String msg = new StringBuilder()
-          .append("Cannot execute project checker, details: '")
-          .append(ex)
-          .append("'")
-          .toString();        
         LOG.info("Project Checker failed to execute, will skip");
-        LOG.warn(msg);
+        LOG.warn("Cannot execute project Checker, details: '" + ex + "'");
     }
   }
 
   private static Map<String, String> effectiveParameters(ActiveRule activeRule) {
     Map<String, String> builder = new HashMap<>();
 
-    if (activeRule.getRule().getTemplate() != null) {
-      builder.put("RuleKey", activeRule.getRuleKey());
+    if (!"".equals(activeRule.templateRuleKey())) {
+      builder.put("RuleKey", activeRule.ruleKey().rule());
     }
 
-    for (ActiveRuleParam param : activeRule.getActiveRuleParams()) {
+    for (Map.Entry<String, String> param : activeRule.params().entrySet()) {
       builder.put(param.getKey(), param.getValue());
-    }
-
-    for (RuleParam param : activeRule.getRule().getParams()) {
-      if (!builder.containsKey(param.getKey())) {
-        builder.put(param.getKey(), param.getDefaultValue());
-      }
     }
 
     return builder;
@@ -254,32 +234,24 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
   private void importResults(SensorContext context) throws IOException, XMLStreamException {
     File analysisOutput = toolOutput();
 
-    new AnalysisResultImporter(context, fileLinesContextFactory, noSonarFilter).parse(analysisOutput, context);
+    new AnalysisResultImporter(context).parse(analysisOutput, context);
   }
-
-
 
   private static class AnalysisResultImporter {
 
-    private final SensorContext context;
     private final FileSystem fs;
     private XMLStreamReader stream;
-    private final FileLinesContextFactory fileLinesContextFactory;
-    private final NoSonarFilter noSonarFilter;
 
-    public AnalysisResultImporter(SensorContext context, FileLinesContextFactory fileLinesContextFactory, NoSonarFilter noSonarFilter) {
-      this.context = context;
+    private AnalysisResultImporter(SensorContext context) {
       this.fs = context.fileSystem();
-      this.fileLinesContextFactory = fileLinesContextFactory;
-      this.noSonarFilter = noSonarFilter;
     }
 
-    public void parse(File file, SensorContext context) throws IOException, XMLStreamException {
-      InputStreamReader reader = null;
+    private void parse(File file, SensorContext context) throws IOException, XMLStreamException {
+      InputStreamReader reader;
       XMLInputFactory xmlFactory = XMLInputFactory.newInstance();
 
       try {
-        reader = new InputStreamReader(new FileInputStream(file), "UTF-8");
+        reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8);
         stream = xmlFactory.createXMLStreamReader(reader);
 
         while (stream.hasNext()) {
@@ -406,8 +378,8 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
 
   }
 
-  private Iterable<File> filesToAnalyze() {
-    return fs.files(fs.predicates().hasLanguage(MSBuildLanguage.KEY));
+  private Iterable<InputFile> filesToAnalyze() {
+    return fs.inputFiles(fs.predicates().hasLanguage(MSBuildLanguage.KEY));
   }
 
   private File toolInput() {
@@ -418,7 +390,7 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
     return toolOutput(fs);
   }
 
-  public static File toolOutput(FileSystem fileSystem) {
+  private static File toolOutput(FileSystem fileSystem) {
     return new File(fileSystem.workDir(), "msbuild-analysis-output.xml");
   }
 

@@ -1,4 +1,5 @@
-﻿open System
+﻿module MSbuildPackageDiagramCreator
+open System
 open System.IO
 open System.Linq
 open System.Text
@@ -6,7 +7,6 @@ open System.Text.RegularExpressions
 
 open Microsoft.Build
 open Microsoft.Build.Evaluation
-open Microsoft.Build.BuildEngine
 
 [<EntryPoint>]
 let main argv = 

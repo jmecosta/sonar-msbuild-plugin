@@ -34,7 +34,6 @@
 package org.sonar.plugins.msbuild;
 
 import org.sonar.api.batch.InstantiationStrategy;
-import org.sonar.api.batch.bootstrap.ProjectReactor;
 
 import java.io.File;
 import java.io.IOException;

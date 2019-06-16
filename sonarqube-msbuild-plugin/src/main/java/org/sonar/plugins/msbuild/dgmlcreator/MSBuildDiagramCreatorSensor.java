@@ -36,6 +36,7 @@ package org.sonar.plugins.msbuild.dgmlcreator;
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
+
 import org.sonar.plugins.msbuild.projectchecker.*;
 import org.sonar.api.batch.sensor.Sensor;
 import org.sonar.api.batch.sensor.SensorContext;
@@ -219,10 +220,6 @@ public class MSBuildDiagramCreatorSensor implements Sensor {
     public void consumeLine(String line) {
       LOG.error(line);
     }
-  }
-
-  private Iterable<File> filesToAnalyze() {
-    return fs.files(fs.predicates().hasLanguage(MSBuildLanguage.KEY));
   }
 
   private File toolInput() {

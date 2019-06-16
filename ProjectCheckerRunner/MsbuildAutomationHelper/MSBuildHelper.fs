@@ -373,19 +373,17 @@ let PreProcessSolution(nugetIgnorePackages : string,
             printf "Handle %A \n" project.Value.Path
             try
                 let msbuildproject =
-                    let projects = ProjectCollection.GlobalProjectCollection.GetLoadedProjects(project.Value.Path)
-    
-                    if projects.Count <> 0 then
-                        let data = projects.GetEnumerator();
-                        data.MoveNext() |> ignore
-                        data.Current
+                    let mutable projectToReturn = null
+                    let currentPath = Path.GetFullPath(project.Value.Path)
+                    for projectLoaded in ProjectCollection.GlobalProjectCollection.LoadedProjects do
+                        let loadedPath = Path.GetFullPath(projectLoaded.FullPath)
+                        if currentPath.ToLower() = loadedPath.ToLower() then
+                            projectToReturn <- projectLoaded
+
+                    if projectToReturn = null then
+                        new Microsoft.Build.Evaluation.Project(currentPath, null, "15.0")
                     else
-                        if toolsVersion.StartsWith("14.0") || toolsVersion.StartsWith("15.0") then
-                            new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "14.0")
-                        elif toolsVersion.StartsWith("12.0") then
-                            new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "12.0")
-                        else
-                            new Microsoft.Build.Evaluation.Project(project.Value.Path, null, "4.0")
+                        projectToReturn
 
                 if extension = ".csproj" then
                     let outputType = match (msbuildproject.Properties |> Seq.tryFind (fun c -> c.Name.Equals("OutputType"))) with | Some value -> value.EvaluatedValue | _ -> ""

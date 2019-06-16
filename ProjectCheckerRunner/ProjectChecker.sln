@@ -11,9 +11,7 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ProjectCheckerRunner", "Pro
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MSbuildPackageDiagramCreator", "MSbuildPackageDiagramCreator\MSbuildPackageDiagramCreator.fsproj", "{29432B5E-7D75-482B-9840-BCBCC9F0E659}"
 EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "MsbuildAutomationHelperSigned", "MsbuildAutomationHelper\Signed\MsbuildAutomationHelperSigned.fsproj", "{49F98A4D-DA45-4E7A-8E37-70D62A036283}"
-EndProject
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "MsbuildAutomationHelper", "MsbuildAutomationHelper\UnSigned\MsbuildAutomationHelper.fsproj", "{F5289289-0822-40CD-8B4B-9C98B6A7D185}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "MsbuildAutomationHelperSigned", "MsbuildAutomationHelper\MsbuildAutomationHelper.fsproj", "{49F98A4D-DA45-4E7A-8E37-70D62A036283}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C015577B-7995-4933-9193-5B4D7BA4E423}"
 	ProjectSection(SolutionItems) = preProject
@@ -53,10 +51,6 @@ Global
 		{49F98A4D-DA45-4E7A-8E37-70D62A036283}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{49F98A4D-DA45-4E7A-8E37-70D62A036283}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{49F98A4D-DA45-4E7A-8E37-70D62A036283}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F5289289-0822-40CD-8B4B-9C98B6A7D185}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F5289289-0822-40CD-8B4B-9C98B6A7D185}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F5289289-0822-40CD-8B4B-9C98B6A7D185}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F5289289-0822-40CD-8B4B-9C98B6A7D185}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0FF92C27-5663-47D4-8B79-C808830108F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0FF92C27-5663-47D4-8B79-C808830108F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection

@@ -148,7 +148,7 @@ public final class MSBuildLineCountParser extends MSBuildAbastractParser {
       parser.parse(input, commentHandler);
       return commentHandler.getNumCommentLines();
     } catch (IOException | SAXException | ParserConfigurationException ex ) {
-      LOG.error("countLinesOfComment fails for '{}' => '{}'", file.absolutePath(), ex.getMessage());
+      LOG.error("countLinesOfComment fails for '{}' => '{}'", file.filename(), ex.getMessage());
       return 0;
     }
   }
