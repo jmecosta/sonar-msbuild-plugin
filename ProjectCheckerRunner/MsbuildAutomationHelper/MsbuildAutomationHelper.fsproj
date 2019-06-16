@@ -8,7 +8,6 @@
     <Version>2.0.5</Version>
     <AssemblyOriginatorKeyFile>..\AssemblyKey.snk</AssemblyOriginatorKeyFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <AssemblyName>MsbuildAutomationHelper</AssemblyName>
     <SignAssembly>true</SignAssembly>
     <Authors>Jorge Costa</Authors>
     <Company>jmecsoftware.com</Company>

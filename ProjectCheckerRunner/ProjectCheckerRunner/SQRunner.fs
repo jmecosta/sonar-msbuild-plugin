@@ -8,8 +8,8 @@ open System.Xml.Linq
 open RuleBase
 open ProjectTypes
 open ProjectCheckerTask
-open VSSonarPlugins
 open SonarRestService
+open SonarRestServiceImpl
 
 type SQAnalyser() =
             
@@ -24,7 +24,7 @@ type SQAnalyser() =
             if File.Exists(path) then
                 let checks = MSBuildHelper.LoadChecksFromPath(path)
                 printf "Checks %A" checks
-                let rest = SonarRestService(new JsonSonarConnector()) :> ISonarRestService
+                let rest = SonarService(new JsonSonarConnector()) :> ISonarRestService
                 let token = SonarHelpers.GetConnectionToken(rest, host, user, pass)
                 SonarHelpers.SyncRulesInServer(path, rest, token, projectKey)
 

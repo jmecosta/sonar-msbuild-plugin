@@ -1,60 +1,18 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\configuration.props" />
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{f02e14b7-f4cd-430f-9078-b3f06a67c404}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>ProjectCheckerTask</RootNamespace>
-    <AssemblyName>ProjectCheckerTask</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <Name>ProjectCheckerTask</Name>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <TargetFrameworkProfile />
+    <TargetFrameworks>net472;netstandard2.0</TargetFrameworks>
+    <OutputPath>..\BuildDrop\ProjectCheckerTask\</OutputPath>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
+    <Version>2.0.5</Version>
+    <AssemblyOriginatorKeyFile>..\AssemblyKey.snk</AssemblyOriginatorKeyFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <SignAssembly>true</SignAssembly>
+    <Authors>Jorge Costa</Authors>
+    <Company>jmecsoftware.com</Company>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <Tailcalls>false</Tailcalls>
-    <OutputPath>$(ExtensionOutputPath)</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <WarningLevel>3</WarningLevel>
-    <DocumentationFile>
-    </DocumentationFile>
-    <StartAction>Program</StartAction>
-    <StartProgram>C:\Windows\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe</StartProgram>
-    <RemoteDebugEnabled>false</RemoteDebugEnabled>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <Tailcalls>true</Tailcalls>
-    <OutputPath>$(ExtensionOutputPath)</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <WarningLevel>3</WarningLevel>
-    <DocumentationFile>
-    </DocumentationFile>
-  </PropertyGroup>
-  <PropertyGroup>
-    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
-  </PropertyGroup>
-  <Choose>
-    <When Condition="'$(VisualStudioVersion)' == '11.0'">
-      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')">
-        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </When>
-    <Otherwise>
-      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets')">
-        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </Otherwise>
-  </Choose>
-  <Import Project="$(FSharpTargetsPath)" />
+
   <ItemGroup>
     <Compile Include="IncludeFolderNotUsedDuringInCompilation.fs" />
     <Compile Include="ReferencesCheck.fs" />
@@ -62,43 +20,18 @@
     <Compile Include="CannotReadProjectCheck.fs" />
     <Compile Include="CSharpStaticAnalysersChecks.fs" />
     <Compile Include="ProjectCheckerTask.fs" />
-    <Content Include="packages.config" />
   </ItemGroup>
+
   <ItemGroup>
-    <Reference Include="FSharp.Core">
-      <HintPath>..\packages\FSharp.Core.4.5.2\lib\net45\FSharp.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="FSharp.Data">
-      <HintPath>..\packages\FSharp.Data.3.1.2\lib\net45\FSharp.Data.dll</HintPath>
-    </Reference>
-    <Reference Include="FSharp.Data.DesignTime, Version=$(TargetFSharpDataVersion), Culture=neutral, PublicKeyToken=a72e257822fd31b6">
-      <HintPath>..\References\$(TargetFSharpCoreVersion)\FSharp.Data.DesignTime.dll</HintPath>
-      <Private>True</Private>
-      <SpecificVersion>True</SpecificVersion>
-    </Reference>
-    <Reference Include="Microsoft.Build" />
-    <Reference Include="Microsoft.Build.Framework" />
-    <Reference Include="Microsoft.Build.Tasks.v4.0" />
-    <Reference Include="Microsoft.Build.Utilities.v4.0" />
-    <Reference Include="mscorlib" />
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Xml.Linq" />
+    <PackageReference Include="FSharp.Core" Version="4.5.2" />
+    <PackageReference Include="FSharp.Data.Signed" Version="3.1.2" />
+    <PackageReference Include="Microsoft.Build" Version="15.9.20" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="15.9.20" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.9.20" />
   </ItemGroup>
+
   <ItemGroup>
-    <ProjectReference Include="..\MsbuildAutomationHelper\UnSigned\MsbuildAutomationHelper.fsproj">
-      <Name>MsbuildAutomationHelper</Name>
-      <Project>{f5289289-0822-40cd-8b4b-9c98b6a7d185}</Project>
-      <Private>True</Private>
-    </ProjectReference>
+    <ProjectReference Include="..\MsbuildAutomationHelper\MsbuildAutomationHelper.fsproj" />
   </ItemGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
 </Project>

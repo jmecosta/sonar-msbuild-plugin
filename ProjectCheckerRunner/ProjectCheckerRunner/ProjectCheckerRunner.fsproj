@@ -1,62 +1,18 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\configuration.props" />
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>08505dfa-d451-4191-bc11-3f9dc53972db</ProjectGuid>
+    <TargetFrameworks>net472</TargetFrameworks>
+    <OutputPath>..\BuildDrop\ProjectCheckerRunner\</OutputPath>
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    <FileVersion>2.0.0.0</FileVersion>
+    <Version>2.0.5</Version>
+    <AssemblyOriginatorKeyFile>..\AssemblyKey.snk</AssemblyOriginatorKeyFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Jorge Costa</Authors>
+    <Company>jmecsoftware.com</Company>
     <OutputType>Exe</OutputType>
-    <RootNamespace>ProjectCheckerRunner</RootNamespace>
-    <AssemblyName>ProjectCheckerRunner</AssemblyName>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Name>ProjectCheckerRunner</Name>
-    <TargetFrameworkProfile />
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <Tailcalls>false</Tailcalls>
-    <OutputPath>$(ExtensionOutputPath)</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <WarningLevel>3</WarningLevel>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DocumentationFile>$(ExtensionOutputPath)ProjectCheckerRunner.XML</DocumentationFile>
-    <Prefer32Bit>true</Prefer32Bit>
-    <StartAction>Project</StartAction>
-    <StartArguments>/i:C:\prod\structures\Core\Common\.scannerwork\msbuild-analysis-input.xml /h:http://localhost:9000 /k:tekla.structures.core:Common /o:C:\prod\structures\Core\Common\.scannerwork\msbuild-analysis-output.xml /u:admin /p:admin</StartArguments>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <Tailcalls>true</Tailcalls>
-    <OutputPath>$(ExtensionOutputPath)</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <WarningLevel>3</WarningLevel>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DocumentationFile>$(ExtensionOutputPath)ProjectCheckerRunner.XML</DocumentationFile>
-    <Prefer32Bit>true</Prefer32Bit>
-    <StartArguments>/f:E:\prod\structures\Core\Common\CommonTests\CommonTests.vcxproj</StartArguments>
-  </PropertyGroup>
-  <PropertyGroup>
-    <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
-  </PropertyGroup>
-  <Choose>
-    <When Condition="'$(VisualStudioVersion)' == '11.0'">
-      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets')">
-        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.0\Framework\v4.0\Microsoft.FSharp.Targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </When>
-    <Otherwise>
-      <PropertyGroup Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets')">
-        <FSharpTargetsPath>$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\FSharp\Microsoft.FSharp.Targets</FSharpTargetsPath>
-      </PropertyGroup>
-    </Otherwise>
-  </Choose>
-  <Import Project="$(FSharpTargetsPath)" />
+
   <ItemGroup>
     <Compile Include="SonarHelpers.fs" />
     <Compile Include="SQRunner.fs" />
@@ -64,53 +20,20 @@
     <Content Include="App.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="packages.config" />
   </ItemGroup>
+
   <ItemGroup>
-    <Reference Include="FSharp.Core">
-      <HintPath>..\packages\FSharp.Core.4.5.2\lib\net40\FSharp.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="FSharp.Data">
-      <HintPath>..\packages\FSharp.Data.3.1.2\lib\net45\FSharp.Data.dll</HintPath>
-    </Reference>
-    <Reference Include="Microsoft.Build" />
-    <Reference Include="Microsoft.Build.Framework" />
-    <Reference Include="Microsoft.Build.Tasks.v4.0" />
-    <Reference Include="Microsoft.Build.Utilities.v4.0" />
-    <Reference Include="mscorlib" />
-    <Reference Include="RestSharp">
-      <HintPath>..\packages\VSSonarExtensionPlugin43Api.7.1.1\lib\RestSharp.dll</HintPath>
-    </Reference>
-    <Reference Include="SonarRestService">
-      <HintPath>..\packages\VSSonarExtensionPlugin43Api.7.1.1\lib\SonarRestService.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Xml" />
-    <Reference Include="System.Xml.Linq" />
-    <ProjectReference Include="..\MsbuildAutomationHelper\UnSigned\MsbuildAutomationHelper.fsproj">
-      <Name>MsbuildAutomationHelper</Name>
-      <Project>{f5289289-0822-40cd-8b4b-9c98b6a7d185}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\ProjectCheckerTask\ProjectCheckerTask.fsproj">
-      <Name>ProjectCheckerTask</Name>
-      <Project>{f02e14b7-f4cd-430f-9078-b3f06a67c404}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <Reference Include="VSSonarPlugins">
-      <HintPath>..\packages\VSSonarExtensionPlugin43Api.7.1.1\lib\VSSonarPlugins.dll</HintPath>
-    </Reference>
-    <Reference Include="VSSonarQubeCmdExecutor">
-      <HintPath>..\packages\VSSonarExtensionPlugin43Api.7.1.1\lib\VSSonarQubeCmdExecutor.dll</HintPath>
-    </Reference>
+    <PackageReference Include="FSharp.Core" Version="4.5.2" />
+    <PackageReference Include="FSharp.Data.Signed" Version="3.1.2" />
+    <PackageReference Include="Microsoft.Build" Version="15.9.20" />
+    <PackageReference Include="Microsoft.Build.Framework" Version="15.9.20" />
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="15.9.20" />
+    <PackageReference Include="SonarRestApiImpl" Version="1.1.2" />
   </ItemGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\MsbuildAutomationHelper\MsbuildAutomationHelper.fsproj" />
+    <ProjectReference Include="..\ProjectCheckerTask\ProjectCheckerTask.fsproj" />
+  </ItemGroup>
+
 </Project>
