@@ -381,7 +381,7 @@ let PreProcessSolution(nugetIgnorePackages : string,
                             projectToReturn <- projectLoaded
 
                     if projectToReturn = null then
-                        new Microsoft.Build.Evaluation.Project(currentPath, null, "15.0")
+                        new Microsoft.Build.Evaluation.Project(currentPath)
                     else
                         projectToReturn
 

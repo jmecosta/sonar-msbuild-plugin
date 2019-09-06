@@ -14,12 +14,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="App.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Compile Include="ProjectTypes.fs" />
     <Compile Include="RuleBase.fs" />
     <Compile Include="Helpers.fs" />
     <Compile Include="MSBuildHelper.fs" />
     <Compile Include="VSSolutionUtils.fs" />
   </ItemGroup>
+
+  <ItemGroup />
 
   <ItemGroup>
     <PackageReference Include="FSharp.Core" Version="4.5.2" />

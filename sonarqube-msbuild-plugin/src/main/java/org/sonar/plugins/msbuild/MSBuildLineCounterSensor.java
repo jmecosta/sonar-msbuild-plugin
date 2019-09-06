@@ -40,10 +40,13 @@ import org.sonar.api.utils.log.Loggers;
 import org.sonar.api.batch.fs.InputFile;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
+
 import org.sonar.api.batch.sensor.SensorDescriptor;
 import org.sonar.api.measures.CoreMetrics;
 import org.sonar.plugins.msbuild.parsers.MSBuildLineCountParser;
-import org.sonar.plugins.msbuild.utils.MSBuildUtils;
 
 /**
  * Count lines of code in XML files.
@@ -53,7 +56,10 @@ import org.sonar.plugins.msbuild.utils.MSBuildUtils;
  */
 public final class MSBuildLineCounterSensor implements Sensor {
   private static final Logger LOG = Loggers.get(MSBuildLineCounterSensor.class);
-    
+  int numLines = 0;
+  int numBlankLines = 0;
+
+
   @Override
   public String toString() {
     return getClass().getSimpleName();
@@ -72,28 +78,23 @@ public final class MSBuildLineCounterSensor implements Sensor {
   }  
   
   private void addMeasures(SensorContext sensorContext, InputFile file) {
-  
-    int numLines = 0;
-    int numBlankLines = 0;
 
-    try {
-      String [] lines = MSBuildUtils.readLines(file.filename());
-      
-      for (String line : lines) {
+    numLines = 0;
+    numBlankLines = 0;
+    try (Stream<String> stream = Files.lines(Paths.get(file.uri()))) {
+      stream.forEach(s -> {
         numLines++;
-        if (line.isEmpty()) {
+        if (s.isEmpty()) {
           numBlankLines++;
-        }        
-      }
+        }
+      });
     } catch (IOException e) {
       LOG.warn("Unable to count lines for file: " + file.filename());
       LOG.warn("Cause: {}", e);
     }
 
     try {
-
       LOG.debug("Count comment in " + file.filename());
-
       MSBuildLineCountParser lineCountParser = new MSBuildLineCountParser();
       int numCommentLines = lineCountParser.countLinesOfComment(new FileInputStream(file.filename()), file);
       sensorContext.<Integer>newMeasure()

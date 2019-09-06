@@ -23,7 +23,7 @@ namespace MSbuildHelpersTest
         public void TestFull()
         {
             var pathSolution = @"D:\prod\structures\MSBuild\RunFast.msbuild";
-            var targetData = MSBuildHelper.CreateTargetTree(pathSolution, "BuildTSAndDotAppsNORPC", @"D:\prod\structures\Packages", string.Empty, false, string.Empty, string.Empty, true, "14.0");
+            var targetData = MSBuildHelper.CreateTargetTree(pathSolution, "BuildTSAndDotAppsNORPC", @"D:\prod\structures\Packages", string.Empty, false, string.Empty, string.Empty, true, "16.0");
             Assert.That(targetData.Length, Is.EqualTo(1));
         }
     }

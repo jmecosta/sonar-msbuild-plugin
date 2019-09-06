@@ -178,7 +178,7 @@ let main argv =
                     else
                         printf "    [ProjectCheckerRunner] [Error]: %s not found \r\n" file
 
-                options.Files |> Array.Parallel.map (fun file -> HandleFileToAnalyse(file)) |> ignore
+                options.Files |> Array.Parallel.map (fun file -> HandleFileToAnalyse(file.Replace("file:///", ""))) |> ignore
                 analyser.WriteXmlToDisk(output)
             with
             | ex -> printf "    Failed: %A \r\n %A" ex.Message ex.StackTrace
