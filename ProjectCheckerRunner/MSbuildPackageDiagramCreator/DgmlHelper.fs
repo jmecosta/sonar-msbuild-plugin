@@ -157,8 +157,11 @@ let WriteDgmlSolutionDocument(path : string, solutionlist : ProjectTypes.Solutio
     let line = sprintf """<Links>"""
     outFile.WriteLine(line)
 
+    let includeSolutionsSet = (config.PlotSolutionNodeFilter.Split([|';'; '\n'; ' '|], StringSplitOptions.RemoveEmptyEntries) |> Set.ofSeq)
     for solution in solutionlist do
-        WriteSolutionLinks(solution, outFile, config)
+        let isIncluded = includeSolutionsSet |> Seq.tryFind (fun elem -> Path.GetFileNameWithoutExtension(solution.Name.ToLower()).Equals(elem.ToLower()) || Path.GetFileNameWithoutExtension(solution.Name.ToLower()).Equals("sln:" + elem.ToLower()))
+        if isIncluded.IsSome || includeSolutionsSet.IsEmpty then
+            WriteSolutionLinks(solution, outFile, config)
 
     let line = sprintf """</Links>"""
     outFile.WriteLine(line)

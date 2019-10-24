@@ -11,6 +11,7 @@
     <Authors>Jorge Costa</Authors>
     <Company>jmecsoftware.com</Company>
     <OutputType>Exe</OutputType>
+    <NuspecFile>MSbuildPackageDiagramCreator.nuspec</NuspecFile>
   </PropertyGroup>
 
   <ItemGroup>

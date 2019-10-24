@@ -1,4 +1,4 @@
-﻿module MSbuildPackageDiagramCreator
+﻿module MSbuildPackageDiagramCreator 
 open System
 open System.IO
 open System.Linq
@@ -71,18 +71,14 @@ let main argv =
 
                                      
         elif arguments.ContainsKey("d") then
-            let supportedExtensions = Set.ofList [".sln"]
             let directory = arguments.["d"] |> Seq.head
-            for file in  Directory.EnumerateFiles(directory, "*.*", SearchOption.AllDirectories) do
-                let extension = Path.GetExtension(file).ToLower()
-                if supportedExtensions.Contains(extension) then 
-                    let includeSolutionsSet = (config.PlotSolutionNodeFilter.Split([|';'; '\n'; ' '|], StringSplitOptions.RemoveEmptyEntries) |> Set.ofSeq)
+            
+            for file in  Directory.EnumerateFiles(directory, "*.sln", SearchOption.AllDirectories) do
+                let solution = MSBuildHelper.PreProcessSolution(config.IgnoreNugetPackages, config.PackageBasePath, file, config.CheckRedundantIncludes, true, tooslVersion)
+                solutionList <- solutionList @ [solution]
 
-                    if includeSolutionsSet.IsEmpty then
-                        let solution = MSBuildHelper.PreProcessSolution(config.IgnoreNugetPackages, config.PackageBasePath, file, config.CheckRedundantIncludes, true, tooslVersion)
-                        if not(includeSolutionsSet.Contains(solution.Name)) then
-                            solutionList <- solutionList @ [solution]
-                            MSBuildHelper.GenerateHeaderDependencies(solutionList, config.PlotHeaderDependency, config.IgnoreIncludeFolders, config.PlotHeaderDependencFilter, config.PlotHeaderDependencyInsideProject)
+            if not(solutionList.IsEmpty) then
+                MSBuildHelper.GenerateHeaderDependencies(solutionList, config.PlotHeaderDependency, config.IgnoreIncludeFolders, config.PlotHeaderDependencFilter, config.PlotHeaderDependencyInsideProject)
 
             DgmlHelper.WriteDgmlSolutionDocument(outputFile, solutionList, config)
         else

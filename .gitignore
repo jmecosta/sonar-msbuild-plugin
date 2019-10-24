@@ -7,3 +7,4 @@ ProjectCheckerRunner/BuildDrop/**
 ProjectCheckerRunner/buildlog*
 **/.vs/**
 ProjectCheckerRunner/nuget/*.nupkg
+/ProjectCheckerRunner/MSbuildPackageDiagramCreator/Properties/launchSettings.json

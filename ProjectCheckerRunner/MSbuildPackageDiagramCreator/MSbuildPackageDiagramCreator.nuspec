@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<package>
+    <metadata>
+        <id>MSbuildPackageDiagramCreator</id>
+        <version>2.0.5</version>
+        <authors>Jorge Costa</authors>
+        <owners>jmecsoftware.com</owners>
+        <licenseUrl>https://github.com/jmecsoftware/sonar-msbuild-plugin/blob/master/LICENSE</licenseUrl>
+        <projectUrl>https://github.com/jmecsoftware/sonar-msbuild-plugin</projectUrl>
+        <iconUrl>https://github.com/jmecsoftware/sonar-msbuild-plugin/blob/master/Icon.ico</iconUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>MSBuild Dgml creator for native projects, with nuget support</description>
+        <releaseNotes>Initial Package.</releaseNotes>
+        <copyright>Copyright © 1992-2018 jmecsoftware.com</copyright>
+        <tags></tags>
+    </metadata>
+    <files>
+        <file src="..\BuildDrop\MSbuildPackageDiagramCreator\net472\*.*" target="tools" />
+    </files>
+</package>
