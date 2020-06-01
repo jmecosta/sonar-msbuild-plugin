@@ -61,7 +61,7 @@ public class MSBuildRunnerExtractor {
 
   public static final Logger LOG = Loggers.get(MSBuildRunnerExtractor.class);
   
-  private static final String N_PROJECT = "ProjectTools";
+  private static final String N_PROJECT = "ProjectChecker";
   private static final String N_PROJECT_ZIP = "ProjectChecker.zip";
   
   private static final String N_PROJECT_CHECKER_EXE = "ProjectCheckerRunner.exe";  
