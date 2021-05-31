@@ -548,14 +548,17 @@ let rec HandleTarget(projectInstance : ProjectTargetInstance,
             |> Array.ofSeq
             |> Array.iter (fun solutionName -> ProcessSolution(solutionName, children))
 
-    // handle children inside target
-    projectInstance.Children
-        |> Array.ofSeq
-        |> Array.iter (fun c-> 
-            try
-                let children = c :?> ProjectTaskInstance
-                if children.Name.Equals("MSBuild") then ProcessChild children
-            with | ex -> ())
+    for child in projectInstance.Children do
+        try
+            let children = child :?> ProjectTaskInstance
+            if children.Name.Equals("MSBuild") then ProcessChild children 
+            if children.Name.Equals("CallTarget") then
+                let child = children.Parameters.["Targets"]
+                let data = msbuildproject.Targets.[child]
+                if data <> null then
+                    let name, depTarget = HandleTarget(data, msbuildproject, child  , &targets, nugetPackageBase, nugetIgnorePackages, processIncludes, toolsVersion)
+                    newTarget.MsbuildTargetDependencies <- newTarget.MsbuildTargetDependencies.Add(name, depTarget)                
+        with | ex -> ()
 
     // handle dependencies
     for dep in projectInstance.DependsOnTargets.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries) do
