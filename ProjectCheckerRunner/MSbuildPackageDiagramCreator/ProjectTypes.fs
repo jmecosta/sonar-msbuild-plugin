@@ -30,6 +30,7 @@ type ConfigurationXml = XmlProvider<"""<?xml version="1.0" encoding="utf-8"?>
     SLN:Solution1;
     SLN:Solution2;
   </PlotSolutionNodeFilter>
+  <ExportSolutionInfoToCsv>false</ExportSolutionInfoToCsv>
 </Configuration>""">
 
 let DefaultConfigXml = """<?xml version="1.0" encoding="utf-8"?>
@@ -46,4 +47,5 @@ let DefaultConfigXml = """<?xml version="1.0" encoding="utf-8"?>
     <PlotHeaderDependencyInsideProject>false</PlotHeaderDependencyInsideProject>
     <PlotHeaderDependencFilter></PlotHeaderDependencFilter>
     <PlotSolutionNodeFilter></PlotSolutionNodeFilter>
+    <ExportSolutionInfoToCsv></ExportSolutionInfoToCsv>
 </Configuration>"""
