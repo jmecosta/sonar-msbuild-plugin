@@ -15,6 +15,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="CsvHelper.fs" />
     <Compile Include="ProjectTypes.fs" />
     <Compile Include="DgmlHelper.fs" />
     <Compile Include="CommandLine.fs" />

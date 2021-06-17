@@ -80,7 +80,11 @@ let main argv =
             if not(solutionList.IsEmpty) then
                 MSBuildHelper.GenerateHeaderDependencies(solutionList, config.PlotHeaderDependency, config.IgnoreIncludeFolders, config.PlotHeaderDependencFilter, config.PlotHeaderDependencyInsideProject)
 
-            DgmlHelper.WriteDgmlSolutionDocument(outputFile, solutionList, config)
+            if config.ExportSolutionInfoToCsv then
+                let csvfile = Path.Combine(Environment.CurrentDirectory, "solutioninfo.csv")
+                CsvHelper.WriteSolutionInfoToCsv(csvfile, solutionList)
+            else 
+                DgmlHelper.WriteDgmlSolutionDocument(outputFile, solutionList, config)
         else
             CommandLine.ShowHelp()
 
