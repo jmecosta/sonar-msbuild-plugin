@@ -28,7 +28,7 @@ The project checked is squid sensor, responsible to find issues with msbuild pro
 
 These are the current configuration options: 
   1. sonar.msbuild.projectchecker.customrules - list of dlls with custom rules to run. see bellow on how to create rules
-  2. sonar.msbuild.prjectChecker.enabled - enables disables project checker
+  2. sonar.msbuild.projectchecker.enabled - enables disables project checker
   3. sonar.msbuild.prjectChecker.Path - external path for project checker
   
 ### Dgml creator
