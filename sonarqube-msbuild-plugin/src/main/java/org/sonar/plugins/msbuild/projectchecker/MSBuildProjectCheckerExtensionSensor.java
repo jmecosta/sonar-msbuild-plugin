@@ -97,7 +97,12 @@ public class MSBuildProjectCheckerExtensionSensor implements Sensor {
   @Override
   public void execute(SensorContext context) {
     if (!settings.getBoolean(CHECKER_ENABLED).isPresent()) {
-      LOG.info("Project Checker Skipped - Disabled");
+      LOG.info("Project Checker not present - Disabled");
+      return;
+    }
+    
+    if (!settings.getBoolean(CHECKER_ENABLED).get()) {
+      LOG.info("Project Checker - Disabled");
       return;
     } 
     
