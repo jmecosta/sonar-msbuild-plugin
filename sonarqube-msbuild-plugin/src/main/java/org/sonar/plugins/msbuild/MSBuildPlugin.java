@@ -53,7 +53,7 @@ public final class MSBuildPlugin implements Plugin {
   private static List<PropertyDefinition> MsbuildProperties() {
     return new ArrayList<>(Arrays.asList(
       PropertyDefinition.builder(MSBuildProjectCheckerExtensionSensor.CHECKER_ENABLED)
-        .defaultValue("False")
+        .defaultValue("True")
         .name("Project Checker enabled")
         .description("Disables Project Checker creator")
         .category("Msbuild")
