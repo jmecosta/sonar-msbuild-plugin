@@ -1,37 +1,35 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFrameworks>net472</TargetFrameworks>
-    <OutputPath>..\BuildDrop</OutputPath>
-    <AssemblyVersion>2.0.0.0</AssemblyVersion>
-    <FileVersion>2.0.0.0</FileVersion>
-    <Version>2.0.7</Version>
-    <AssemblyOriginatorKeyFile>..\AssemblyKey.snk</AssemblyOriginatorKeyFile>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <SignAssembly>true</SignAssembly>
-    <Authors>Jorge Costa</Authors>
-    <Company>jmecsoftware.com</Company>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFrameworks>net8.0;net472</TargetFrameworks>
+		<OutputPath>..\BuildDrop</OutputPath>
+		<AssemblyVersion>3.0.0.0</AssemblyVersion>
+		<FileVersion>3.0.0.0</FileVersion>
+		<Version>3.1.0</Version>
+		<AssemblyOriginatorKeyFile>..\AssemblyKey.snk</AssemblyOriginatorKeyFile>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<SignAssembly>true</SignAssembly>
+		<Authors>Jorge Costa</Authors>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <Content Include="App.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Compile Include="ProjectTypes.fs" />
-    <Compile Include="RuleBase.fs" />
-    <Compile Include="Helpers.fs" />
-    <Compile Include="MSBuildHelper.fs" />
-    <Compile Include="VSSolutionUtils.fs" />
-  </ItemGroup>
+	<ItemGroup>
+		<Content Include="App.config">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+		<Compile Include="ProjectTypes.fs" />
+		<Compile Include="RuleBase.fs" />
+		<Compile Include="Helpers.fs" />
+		<Compile Include="MSBuildHelper.fs" />
+		<Compile Include="VSSolutionUtils.fs" />
+	</ItemGroup>
 
-  <ItemGroup />
+	<ItemGroup />
 
-  <ItemGroup>
-    <PackageReference Include="FSharp.Core" Version="4.5.2" />
-    <PackageReference Include="FSharp.Data.Signed" Version="3.1.2" />
-    <PackageReference Include="Microsoft.Build" Version="16.10.0" />
-    <PackageReference Include="Microsoft.Build.Framework" Version="16.10.0" />
-    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="16.10.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="FSharp.Data" Version="6.3.0" />
+		<PackageReference Include="Microsoft.Build" Version="17.5.0" />
+		<PackageReference Include="Microsoft.Build.Framework" Version="17.5.0" />
+		<PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.5.0" />
+	</ItemGroup>
 
 </Project>

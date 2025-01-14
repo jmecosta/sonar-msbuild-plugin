@@ -60,7 +60,7 @@ let ignoreHeaders = ["cstdlib"; "cstdarg"; "climits"; "cfloat"; "cstding";
 
 let FindFullPathFromAdditionalDirectories(file : string, mainPath : string) =
     let ValidateFileInFolder(c : string []) = 
-        let matchCasingName d = 
+        let matchCasingName(d:string) = 
             let fileName = Path.GetFileName(d)
             let fileNameLowerCase = fileName.ToLower()
 
