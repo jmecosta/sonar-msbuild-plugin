@@ -1,8 +1,6 @@
 ﻿module CommandLine
 
 open System
-open System.IO
-open System.Text
 open System.Text.RegularExpressions
 
 let ShowHelp () =
