@@ -3,12 +3,12 @@
 open System
 open System.IO
 
-open System.Text
 open System.Text.RegularExpressions
 open Microsoft.Build.Execution
 open Microsoft.Build.Evaluation
 
 open System.Reflection
+open System.Runtime.InteropServices
 open RuleBase
 
 // Match starts with
@@ -32,7 +32,8 @@ let LoadChecksFromPath(path : string) =
             let data =  (Activator.CreateInstance(typedata) :?> RuleBase)
             checks <- checks @ [data]
         with
-        | ex -> ()
+        | :? InvalidCastException -> ()
+        | ex -> printf "[MSBuildHelper] Failed to load check from type %s: %s\n" typedata.FullName ex.Message
 
     checks
 
@@ -89,7 +90,7 @@ let CreateSolutionData(solution : string) =
                         
                     
                 with
-                | ex -> ()
+                | ex -> printf "[MSBuildHelper] Failed to parse project dependency in solution: %s\n" ex.Message
 
     let handleLine (line : string) =
         if line.TrimStart().StartsWith("Project(") then
@@ -462,7 +463,7 @@ let PreProcessSolution(nugetIgnorePackages : string,
                                         project.Value.NugetReferences <- project.Value.NugetReferences.Add(packageId)
                                         project.Value.Visible <- true
                             with
-                            | ex -> ()
+                            | ex -> printf "[MSBuildHelper] Failed to process nuget import for %s: %s\n" project.Value.Path ex.Message
 
                     HandleCppProjecItems(msbuildproject, project.Value, solution, packagesBasePath, processIncludes, detectHeaderCycles)
 
@@ -474,6 +475,76 @@ let PreProcessSolution(nugetIgnorePackages : string,
     solution
 
 
+let rec CountSolutions(projectInstance : ProjectTargetInstance,
+                       msbuildproject : Microsoft.Build.Evaluation.Project,
+                       target : string,
+                       visited : byref<Set<string>>) =
+    if projectInstance = null || visited.Contains(target) then
+        0
+    else
+
+    visited <- visited.Add(target)
+    let mutable count = 0
+
+    let countSolution(value : string) =
+        if value.ToLower().EndsWith(".sln") then
+            count <- count + 1
+
+    let resolveAndCount(name : string, children : ProjectTaskInstance) =
+        let value = msbuildproject.GetPropertyValue(name)
+        if value <> "" then
+            countSolution(value)
+        else
+            let xmlData =
+                if not(BuildScripts.ContainsKey(children.FullPath)) then
+                    BuildScripts <- BuildScripts.Add(children.FullPath,
+                        ProjectTypes.ProjType.Parse(File.ReadAllText(children.FullPath)))
+                BuildScripts.[children.FullPath]
+
+            let targetSubData = xmlData.Targets |> Seq.tryFind(fun x -> x.Name.Equals(target))
+            match targetSubData with
+            | Some t ->
+                for ig in t.ItemGroups do
+                    for elem in ig.XElement.Elements() do
+                        for attrib in elem.Attributes() do
+                            if attrib.Name.LocalName.ToLower().Equals("include") then
+                                let tokens = attrib.Value.Split(
+                                    [|';'; '\n'; ' '; '\r'; '$'; '('; ')'|],
+                                    StringSplitOptions.RemoveEmptyEntries)
+                                for token in tokens do
+                                    let v = msbuildproject.GetPropertyValue(token)
+                                    if v <> "" then countSolution(v)
+                                    elif Path.IsPathRooted(token) then countSolution(token)
+            | _ -> ()
+
+    for child in projectInstance.Children do
+        try
+            let task = child :?> ProjectTaskInstance
+            if task.Name.Equals("MSBuild") then
+                let projects = task.Parameters.["Projects"]
+                let elements = projects.Split(
+                    [|';'; '\n'; ' '; '\r'; '$'; '('; ')'; '@'; '%'|],
+                    StringSplitOptions.RemoveEmptyEntries)
+                for elem in elements do
+                    resolveAndCount(elem, task)
+
+            if task.Name.Equals("CallTarget") then
+                let depName = task.Parameters.["Targets"]
+                let mutable depData : ProjectTargetInstance = null
+                if msbuildproject.Targets.TryGetValue(depName, &depData) && depData <> null then
+                    count <- count + CountSolutions(depData, msbuildproject, depName, &visited)
+        with | _ -> ()
+
+    let dependsOn = projectInstance.DependsOnTargets
+    if not(String.IsNullOrEmpty(dependsOn)) then
+        for dep in dependsOn.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries) do
+            if dep <> "" then
+                let mutable depData : ProjectTargetInstance = null
+                if msbuildproject.Targets.TryGetValue(dep, &depData) && depData <> null then
+                    count <- count + CountSolutions(depData, msbuildproject, dep, &visited)
+
+    count
+
 let mutable childSolutionsFound = List.empty
 // preporcess targets in msbuild files
 let rec HandleTarget(projectInstance : ProjectTargetInstance,
@@ -483,8 +554,18 @@ let rec HandleTarget(projectInstance : ProjectTargetInstance,
                      nugetPackageBase : string,
                      nugetIgnorePackages : string,
                      processIncludes : bool,
-                     toolsVersion : string) =
-    
+                     toolsVersion : string,
+                     progressCallback : Action<int, string>,
+                     solutionsProcessed : int ref,
+                     totalSolutions : int) =
+
+    if projectInstance = null then
+        let skipped = new ProjectTypes.MsbuildTarget()
+        skipped.Name <- "MSB:" + target + " (not found)"
+        Helpers.AddWarning("MSBuild", sprintf "Target '%s' instance is null, skipping" target)
+        skipped.Name, skipped
+    else
+
     let targetdata = msbuildproject.Targets.[target]
     let newTarget = new ProjectTypes.MsbuildTarget()
     childSolutionsFound <- List.empty
@@ -499,6 +580,9 @@ let rec HandleTarget(projectInstance : ProjectTargetInstance,
             if not(newTarget.Children.ContainsKey(solutionData.Name)) then
                 childSolutionsFound <- childSolutionsFound @ [solutionData]
                 newTarget.Children <- newTarget.Children.Add(solutionData.Name, solutionData)
+            incr solutionsProcessed
+            let pct = 5 + int(float solutionsProcessed.Value / float totalSolutions * 90.0)
+            progressCallback.Invoke(pct, sprintf "Processing solution: %s (%d/%d)" (Path.GetFileName(projectSolution)) solutionsProcessed.Value totalSolutions)
 
     let processXmlElements(topLevel:Xml.Linq.XElement, solution:string) = 
         let ProcessElement(elem:Xml.Linq.XElement) = 
@@ -556,16 +640,21 @@ let rec HandleTarget(projectInstance : ProjectTargetInstance,
                 let child = children.Parameters.["Targets"]
                 let data = msbuildproject.Targets.[child]
                 if data <> null then
-                    let name, depTarget = HandleTarget(data, msbuildproject, child  , &targets, nugetPackageBase, nugetIgnorePackages, processIncludes, toolsVersion)
+                    let name, depTarget = HandleTarget(data, msbuildproject, child, &targets, nugetPackageBase, nugetIgnorePackages, processIncludes, toolsVersion, progressCallback, solutionsProcessed, totalSolutions)
                     newTarget.MsbuildTargetDependencies <- newTarget.MsbuildTargetDependencies.Add(name, depTarget)                
-        with | ex -> ()
+        with | ex -> printf "[MSBuildHelper] Failed to process target child: %s\n" ex.Message
 
     // handle dependencies
-    for dep in projectInstance.DependsOnTargets.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries) do
-        if dep <> "" then
-            let data = msbuildproject.Targets.[dep]
-            let name, depTarget = HandleTarget(data, msbuildproject, dep, &targets, nugetPackageBase, nugetIgnorePackages, processIncludes, toolsVersion)
-            newTarget.MsbuildTargetDependencies <- newTarget.MsbuildTargetDependencies.Add(name, depTarget)
+    let dependsOn = projectInstance.DependsOnTargets
+    if not(String.IsNullOrEmpty(dependsOn)) then
+        for dep in dependsOn.Split([|';'; '\n'; ' '; '\r'; '\t'|], StringSplitOptions.RemoveEmptyEntries) do
+            if dep <> "" then
+                let mutable data : Microsoft.Build.Execution.ProjectTargetInstance = null
+                if msbuildproject.Targets.TryGetValue(dep, &data) && data <> null then
+                    let name, depTarget = HandleTarget(data, msbuildproject, dep, &targets, nugetPackageBase, nugetIgnorePackages, processIncludes, toolsVersion, progressCallback, solutionsProcessed, totalSolutions)
+                    newTarget.MsbuildTargetDependencies <- newTarget.MsbuildTargetDependencies.Add(name, depTarget)
+                else
+                    Helpers.AddWarning("MSBuild", sprintf "Target '%s' referenced by '%s' was not found" dep target)
     
     targets <- targets @ [newTarget]
     newTarget.Name, newTarget 
@@ -618,7 +707,8 @@ let GenerateHeaderDependencies(solutionList : ProjectTypes.Solution List,
                                                             raise(ProjectTypes.FoundElementException("found"))
                                                 | _  -> ()
                                     with
-                                    | ex -> ()
+                                    | :? ProjectTypes.FoundElementException -> ()
+                                    | ex -> printf "[MSBuildHelper] Failed to find header dependency: %s\n" ex.Message
 
 
 
@@ -811,20 +901,27 @@ let CreateTargetTree(path : string, target : string,
                      ignoreIncludeFolders : string,
                      plotHeaderDependencFilter : string,
                      plotHeaderDependencyInsideProject : bool,
-                     toolsVersion : string) = 
+                     toolsVersion : string,
+                     [<Optional; DefaultParameterValue(null)>] progressCallback : Action<int, string>) = 
+    let callback = if isNull progressCallback then Action<int, string>(fun _ _ -> ()) else progressCallback
     let mutable targets : ProjectTypes.MsbuildTarget List = List.Empty
+    callback.Invoke(0, "Loading MSBuild project...")
     let msbuildproject = new Microsoft.Build.Evaluation.Project(path)
     let data = msbuildproject.Targets.[target]
 
-    // collect pre processing information
-    HandleTarget(data, msbuildproject, target, &targets, nugetPackageBase, nugetIgnorePackages, plotHeaderDependency, toolsVersion) |> ignore
+    callback.Invoke(2, "Counting solutions...")
+    let mutable visited = Set.empty
+    let totalSolutions = max 1 (CountSolutions(data, msbuildproject, target, &visited))
 
-    // generate build deps between existing solutions
+    callback.Invoke(5, sprintf "Processing %d solutions..." totalSolutions)
+    let solutionsProcessed = ref 0
+    HandleTarget(data, msbuildproject, target, &targets, nugetPackageBase, nugetIgnorePackages, plotHeaderDependency, toolsVersion, callback, solutionsProcessed, totalSolutions) |> ignore
+
+    callback.Invoke(95, "Generating dependencies...")
     GenerateExternalBuildDependenciesForSolutions(targets)
-
-    // generate build deps between existing targets
     GenerateDependenciesForTargets(targets, plotHeaderDependency, ignoreIncludeFolders, plotHeaderDependencFilter, plotHeaderDependencyInsideProject)
 
+    callback.Invoke(98, "Finalizing...")
     ProjectCollection.GlobalProjectCollection.UnloadProject(msbuildproject)
 
     targets

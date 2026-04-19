@@ -153,20 +153,24 @@ let main argv =
                 let options = InputXml.Parse(File.ReadAllText(input))
 
                 let analyser = new SQAnalyser()
-                let basePath = (options.Settings |> Seq.find (fun c -> c.Key.Equals("ProjectRoot"))).Value
-                let ingoreFolders = (options.Settings |> Seq.find (fun c -> c.Key.Equals("sonar.msbuild.include.folder.ignores"))).Value
-                let rules = options.Settings |> Seq.find (fun c -> c.Key.Equals("sonar.msbuild.projectchecker.customrules"))
+                let basePathOpt = options.Settings |> Seq.tryFind (fun c -> c.Key.Equals("ProjectRoot"))
+                if basePathOpt.IsNone then
+                    printf "    [ProjectCheckerRunner] [Error]: 'ProjectRoot' setting not found in input XML\r\n"
 
-                if rules.Value <> "" then
-                    for dllPath in rules.Value.Split(';') do
+                let basePath = match basePathOpt with | Some s -> s.Value | None -> ""
+                let ignoreFolders = match options.Settings |> Seq.tryFind (fun c -> c.Key.Equals("sonar.msbuild.include.folder.ignores")) with | Some s -> s.Value | None -> ""
+                let rulesValue = match options.Settings |> Seq.tryFind (fun c -> c.Key.Equals("sonar.msbuild.projectchecker.customrules")) with | Some s -> s.Value | None -> ""
+
+                if rulesValue <> "" then
+                    for dllPath in rulesValue.Split(';') do
                         printf "    External Analysers: %A\n" dllPath
                         if Path.IsPathRooted(dllPath) then
                             analyser.AddExternalAnalyser(dllPath, hostname, username, password, projectKey)
                         else 
                             analyser.AddExternalAnalyser(Path.Combine(basePath, dllPath), hostname, username, password, projectKey)
 
-                if ingoreFolders <> "" then
-                    for folder in ingoreFolders.Split(';') do
+                if ignoreFolders <> "" then
+                    for folder in ignoreFolders.Split(';') do
                         if Path.IsPathRooted(folder) then
                             analyser.AddIgnoreIncludeFolder(folder)
                         else 
@@ -189,7 +193,7 @@ let main argv =
 
             let csfiles = Directory.GetFiles(directory, "*.csproj", SearchOption.AllDirectories)
             let cppfiles = Directory.GetFiles(directory, "*.vcxproj", SearchOption.AllDirectories)
-            let fsfiles = Directory.GetFiles(directory, "*.vcxproj", SearchOption.AllDirectories)
+            let fsfiles = Directory.GetFiles(directory, "*.fsproj", SearchOption.AllDirectories)
 
             let metrics = new SQAnalyser()
 

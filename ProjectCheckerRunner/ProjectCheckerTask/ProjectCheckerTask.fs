@@ -125,7 +125,7 @@ type ProjectCheckerTask() as this =
                                                         Message= "Cannot Read Project File : " + ex.Message,
                                                         Rule = "CannotReadProjectError")]                                   
             with
-            | ex -> ()
+            | ex -> printf "[ProjectCheckerTask] Failed to analyse project %s: %s\n" path ex.Message
 
 
     member x.GetAllIssues() =
