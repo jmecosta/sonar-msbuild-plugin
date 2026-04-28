@@ -6,7 +6,7 @@ open System.Reflection
 open SonarRestService
 open SonarRestService.Types
 
-let execPath = Directory.GetParent(Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", "")).ToString()
+let execPath = Directory.GetParent(Assembly.GetExecutingAssembly().Location).ToString()
 
 let CreateRulesWithDiagnostic(path : string, profiles : System.Collections.Generic.Dictionary<string, Profile>, rest : ISonarRestService, token : ISonarConfiguration) = 
     let checks = MSBuildHelper.LoadChecksFromPath(path)

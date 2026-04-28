@@ -1,38 +1,39 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <TargetFrameworks>net472</TargetFrameworks>
-    <OutputPath>..\BuildDrop\MSbuildPackageDiagramCreator\</OutputPath>
-    <AssemblyVersion>3.2.0</AssemblyVersion>
-    <FileVersion>3.2.0.0</FileVersion>
-    <Version>3.2.0</Version>
-    <AssemblyOriginatorKeyFile>..\AssemblyKey.snk</AssemblyOriginatorKeyFile>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>Jorge Costa</Authors>
-    <Company>jmecsoftware.com</Company>
-    <OutputType>Exe</OutputType>
-    <NuspecFile>MSbuildPackageDiagramCreator.nuspec</NuspecFile>
-  </PropertyGroup>
+	<PropertyGroup>
+		<TargetFrameworks>net10.0</TargetFrameworks>
+		<OutputPath>..\BuildDrop\MSbuildPackageDiagramCreator\</OutputPath>
+		<AssemblyVersion>3.3.0</AssemblyVersion>
+		<FileVersion>3.3.0.0</FileVersion>
+		<Version>3.3.0</Version>
+		<AssemblyOriginatorKeyFile>..\AssemblyKey.snk</AssemblyOriginatorKeyFile>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<Authors>Jorge Costa</Authors>
+		<Company>jmecsoftware.com</Company>
+		<OutputType>Exe</OutputType>
+		<NuspecProperties>version=$(Version)</NuspecProperties>
+		<NuspecFile>..\nuget\MSbuildPackageDiagramCreator.nuspec</NuspecFile>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <Compile Include="CsvHelper.fs" />
-    <Compile Include="ProjectTypes.fs" />
-    <Compile Include="DgmlHelper.fs" />
-    <Compile Include="CommandLine.fs" />
-    <Compile Include="Program.fs" />
-    <Content Include="App.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+	<ItemGroup>
+		<Compile Include="CsvHelper.fs" />
+		<Compile Include="ProjectTypes.fs" />
+		<Compile Include="DgmlHelper.fs" />
+		<Compile Include="CommandLine.fs" />
+		<Compile Include="Program.fs" />
+		<Content Include="App.config">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="FSharp.Core" Version="4.5.2" />
-    <PackageReference Include="FSharp.Data.Signed" Version="3.1.2" />
-    <PackageReference Include="Microsoft.Build.Locator" Version="1.11.1" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="FSharp.Data" Version="8.1.11" />
+		<PackageReference Include="Microsoft.Build.Locator" Version="1.11.1" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\MsbuildAutomationHelper\MsbuildAutomationHelper.fsproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\MsbuildAutomationHelper\MsbuildAutomationHelper.fsproj" />
+	</ItemGroup>
 
 </Project>

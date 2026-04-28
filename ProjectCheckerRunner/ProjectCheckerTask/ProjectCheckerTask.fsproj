@@ -1,11 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net472</TargetFrameworks>
+    <TargetFrameworks>net48;net10.0</TargetFrameworks>
     <OutputPath>..\BuildDrop\ProjectCheckerTask\</OutputPath>
-    <AssemblyVersion>2.0.0.0</AssemblyVersion>
-    <FileVersion>2.0.0.0</FileVersion>
-    <Version>2.0.5</Version>
+    <AssemblyVersion>3.3.0.0</AssemblyVersion>
+    <FileVersion>3.3.0.0</FileVersion>
+    <Version>3.3.0</Version>
     <AssemblyOriginatorKeyFile>..\AssemblyKey.snk</AssemblyOriginatorKeyFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <SignAssembly>true</SignAssembly>
@@ -20,14 +20,6 @@
     <Compile Include="CannotReadProjectCheck.fs" />
     <Compile Include="CSharpStaticAnalysersChecks.fs" />
     <Compile Include="ProjectCheckerTask.fs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="FSharp.Core" Version="4.5.2" />
-    <PackageReference Include="FSharp.Data.Signed" Version="3.1.2" />
-	  <PackageReference Include="Microsoft.Build" Version="17.5.0" ExcludeAssets="runtime" />
-	  <PackageReference Include="Microsoft.Build.Framework" Version="17.5.0" ExcludeAssets="runtime" />
-	  <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.5.0" ExcludeAssets="runtime" />
   </ItemGroup>
 
   <ItemGroup>

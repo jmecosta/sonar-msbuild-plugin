@@ -10,7 +10,7 @@ let main argv =
         MSBuildLocator.RegisterDefaults() |> ignore
         let arguments = CommandLine.parseArgs(argv)
         let mutable solutionList = List.Empty
-        let executionFolder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().CodeBase.Replace("file:///", ""))
+        let executionFolder = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)
         let outputFile = 
             if arguments.ContainsKey("o")  then
                 (arguments.["o"] |> Seq.head) + ".dgml"
